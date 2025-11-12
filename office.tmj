@@ -101,7 +101,7 @@
                  "x":0,
                  "y":0
                 }],
-         "name":"floor",
+         "name":"floorLayer",
          "opacity":1,
          "type":"group",
          "visible":true,
