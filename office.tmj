@@ -17643,8 +17643,8 @@
               "id": 27,
               "name": "bell_daniel_office",
               "visible": true,
-              "x": 482.5,
-              "y": 347.75,
+              "x": 490.25,
+              "y": 340.75,
               "height": 0,
               "point": true,
               "properties": [
@@ -17656,7 +17656,7 @@
                 {
                   "name": "bellSound",
                   "type": "string",
-                  "value": "https://actions.google.com/sounds/v1/alarms/beep_short.ogg"
+                  "value": "https://actions.google.com/sounds/v1/alarms/spaceship_alarm.ogg"
                 },
                 {
                   "name": "soundRadius",
@@ -20202,7 +20202,7 @@
     {
       "columns": 10,
       "firstgid": 1,
-      "image": "office-chunk-1-fdceadc4.png",
+      "image": "office-chunk-1-12e7ffc4.png",
       "imageheight": 320,
       "imagewidth": 320,
       "margin": 0,
