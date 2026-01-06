@@ -18139,7 +18139,7 @@
             0,
             0,
             0,
-            0,
+            96,
             0,
             0,
             0,
@@ -20128,41 +20128,19 @@
           "type": "tilelayer",
           "visible": true,
           "width": 50,
+          "properties": [
+            {
+              "name": "bellVariable",
+              "type": "string",
+              "value": "bell_daniel_office"
+            }
+          ],
           "x": 0,
           "y": 0
         },
         {
           "name": "bellRinger",
-          "objects": [
-            {
-              "id": 30,
-              "name": "",
-              "visible": true,
-              "x": 624,
-              "y": 312.75,
-              "height": 0,
-              "properties": [
-                {
-                  "name": "bellButtonText",
-                  "type": "string",
-                  "value": "Ring the Bell"
-                },
-                {
-                  "name": "bellPopup",
-                  "type": "string",
-                  "value": "Ring Me"
-                },
-                {
-                  "name": "bellVariable",
-                  "type": "string",
-                  "value": "bell"
-                }
-              ],
-              "rotation": 0,
-              "type": "",
-              "width": 0
-            }
-          ],
+          "objects": [],
           "opacity": 1,
           "type": "objectgroup",
           "visible": true,
@@ -20224,14 +20202,14 @@
     {
       "columns": 10,
       "firstgid": 1,
-      "image": "office-chunk-1-d632b3cf.png",
+      "image": "office-chunk-1-bd53d9dc.png",
       "imageheight": 320,
       "imagewidth": 320,
       "margin": 0,
       "name": "Chunk 1",
       "properties": [],
       "spacing": 0,
-      "tilecount": 95,
+      "tilecount": 96,
       "tileheight": 32,
       "tilewidth": 32,
       "tiles": [
