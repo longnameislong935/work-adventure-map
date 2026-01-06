@@ -17619,6 +17619,41 @@
       "type": "group",
       "layers": [
         {
+          "name": "ring_bell_daniel_office",
+          "objects": [
+            {
+              "id": 28,
+              "name": "",
+              "visible": true,
+              "x": 636,
+              "y": 307,
+              "height": 0,
+              "properties": [
+                {
+                  "name": "bellButtonText",
+                  "type": "string",
+                  "value": "Ring Bell"
+                },
+                {
+                  "name": "bellVariable",
+                  "type": "string",
+                  "value": "bell_daniel_office"
+                }
+              ],
+              "rotation": 0,
+              "type": "",
+              "width": 0
+            }
+          ],
+          "opacity": 1,
+          "type": "objectgroup",
+          "visible": true,
+          "draworder": "topdown",
+          "id": 87,
+          "x": 0,
+          "y": 0
+        },
+        {
           "data": [
             0,
             0,
@@ -20191,7 +20226,7 @@
     {
       "columns": 10,
       "firstgid": 1,
-      "image": "office-chunk-1-21e01565.png",
+      "image": "office-chunk-1-86795d73.png",
       "imageheight": 320,
       "imagewidth": 320,
       "margin": 0,
@@ -20229,8 +20264,8 @@
   "compressionlevel": -1,
   "height": 50,
   "infinite": false,
-  "nextlayerid": 87,
-  "nextobjectid": 28,
+  "nextlayerid": 88,
+  "nextobjectid": 29,
   "orientation": "orthogonal",
   "properties": [
     {
