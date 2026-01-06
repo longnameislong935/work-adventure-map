@@ -448,9 +448,92 @@
          "width":50,
          "x":0,
          "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":80,
+         "name":"Bells",
+         "objects":[
+                {
+                 "height":0,
+                 "id":21,
+                 "name":"office_bell_1",
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"bell",
+                         "type":"bool",
+                         "value":true
+                        }, 
+                        {
+                         "name":"bellSound",
+                         "type":"string",
+                         "value":"https:\/\/actions.google.com\/sounds\/v1\/alarms\/beep_short.ogg"
+                        }, 
+                        {
+                         "name":"soundRadius",
+                         "type":"int",
+                         "value":200
+                        }],
+                 "rotation":0,
+                 "type":"variable",
+                 "visible":true,
+                 "width":0,
+                 "x":656,
+                 "y":298
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":81,
+         "name":"Bell_Ringer",
+         "objects":[
+                {
+                 "height":1,
+                 "id":22,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"bellButtonText",
+                         "type":"string",
+                         "value":"office_bell_1"
+                        }, 
+                        {
+                         "name":"bellVariable",
+                         "type":"string",
+                         "value":"Ring Bell \ud83d\udd14"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":656,
+                 "y":277
+                }, 
+                {
+                 "height":0,
+                 "id":23,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":1374,
+                 "y":290
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
         }],
- "nextlayerid":78,
- "nextobjectid":20,
+ "nextlayerid":82,
+ "nextobjectid":24,
  "orientation":"orthogonal",
  "properties":[
         {
@@ -476,7 +559,7 @@
         {
          "name":"script",
          "type":"string",
-         "value":"src\/main.ts"
+         "value":"https:\/\/unpkg.com\/@workadventure\/scripting-api-extra@^1\/dist\/bundle.js"
         }],
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
