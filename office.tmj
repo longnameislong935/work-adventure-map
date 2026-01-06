@@ -485,7 +485,7 @@
                                  "value":"https:\/\/actions.google.com\/sounds\/v1\/alarms\/bugle_tune.ogg"
                                 }],
                          "rotation":0,
-                         "type":"",
+                         "type":"variable",
                          "visible":true,
                          "width":0,
                          "x":558.5,
@@ -566,7 +566,7 @@
          "y":0
         }],
  "nextlayerid":94,
- "nextobjectid":35,
+ "nextobjectid":36,
  "orientation":"orthogonal",
  "properties":[
         {
