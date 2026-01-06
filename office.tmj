@@ -389,77 +389,67 @@
          "y":0
         }, 
         {
-         "id":84,
-         "layers":[
+         "draworder":"topdown",
+         "id":92,
+         "name":"bell",
+         "objects":[
                 {
-                 "draworder":"topdown",
-                 "id":92,
-                 "name":"bells",
-                 "objects":[
+                 "height":0,
+                 "id":36,
+                 "name":"bell",
+                 "point":true,
+                 "properties":[
                         {
-                         "height":0,
-                         "id":36,
-                         "name":"bell",
-                         "point":true,
-                         "properties":[
-                                {
-                                 "name":"Type",
-                                 "type":"string",
-                                 "value":"variable"
-                                }, 
-                                {
-                                 "name":"bell",
-                                 "type":"bool",
-                                 "value":true
-                                }, 
-                                {
-                                 "name":"bellSound",
-                                 "type":"string",
-                                 "value":"https:\/\/actions.google.com\/sounds\/v1\/alarms\/bugle_tune.ogg"
-                                }],
-                         "rotation":0,
-                         "type":"variable",
-                         "visible":true,
-                         "width":0,
-                         "x":590.5,
-                         "y":340.75
+                         "name":"Type",
+                         "type":"string",
+                         "value":"variable"
                         }, 
                         {
-                         "height":32.5,
-                         "id":37,
-                         "name":"",
-                         "properties":[
-                                {
-                                 "name":"bellButtonText",
-                                 "type":"string",
-                                 "value":"bellbuttontext"
-                                }, 
-                                {
-                                 "name":"bellPopup",
-                                 "type":"string",
-                                 "value":"bellpopup"
-                                }, 
-                                {
-                                 "name":"bellVariable",
-                                 "type":"string",
-                                 "value":"bell"
-                                }],
-                         "rotation":0,
-                         "type":"",
-                         "visible":true,
-                         "width":63.25,
-                         "x":609.5,
-                         "y":290.25
+                         "name":"bell",
+                         "type":"bool",
+                         "value":true
+                        }, 
+                        {
+                         "name":"bellSound",
+                         "type":"string",
+                         "value":"https:\/\/actions.google.com\/sounds\/v1\/alarms\/bugle_tune.ogg"
                         }],
-                 "opacity":1,
-                 "type":"objectgroup",
+                 "rotation":0,
+                 "type":"variable",
                  "visible":true,
-                 "x":0,
-                 "y":0
+                 "width":0,
+                 "x":590.5,
+                 "y":340.75
+                }, 
+                {
+                 "height":32.5,
+                 "id":37,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"bellButtonText",
+                         "type":"string",
+                         "value":"bellbuttontext"
+                        }, 
+                        {
+                         "name":"bellPopup",
+                         "type":"string",
+                         "value":"bellpopup"
+                        }, 
+                        {
+                         "name":"bellVariable",
+                         "type":"string",
+                         "value":"bell"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":63.25,
+                 "x":609.5,
+                 "y":290.25
                 }],
-         "name":"bells",
          "opacity":1,
-         "type":"group",
+         "type":"objectgroup",
          "visible":true,
          "x":0,
          "y":0
@@ -548,6 +538,11 @@
          "name":"mapName",
          "type":"string",
          "value":"Office"
+        }, 
+        {
+         "name":"script",
+         "type":"string",
+         "value":"src\/main.ts"
         }],
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
