@@ -6,50 +6,56 @@ console.log('Script started successfully');
 
 let currentPopup: any = undefined;
 
+// Waiting for the API to be ready
 WA.onInit().then(() => {
     console.log('Scripting API ready');
 
+    // Existing Clock Logic
     WA.room.area.onEnter('clock').subscribe(() => {
         const today = new Date();
         const time = today.getHours() + ":" + (today.getMinutes() < 10 ? '0' : '') + today.getMinutes();
+        console.log('Clock area entered at: ' + time);
         currentPopup = WA.ui.openPopup("clockPopup", "It's " + time, []);
     });
 
     WA.room.area.onLeave('clock').subscribe(closePopup);
 
+    // Bootstrap the Scripting API Extra library
     bootstrapExtra().then(() => {
         console.log('Scripting API Extra ready');
 
-        // This @ts-ignore prevents the TS18046 error by skipping type checking for the next line
-        // @ts-ignore
-        const bellVar = WA.state.getVariable('bell');
-        console.log("DEBUG: Current value of 'bell' variable:", bellVar);
+        try {
+            // This listens for the 'bell' variable you set in Tiled
+            // @ts-ignore
+            WA.state.onVariableChange('bell').subscribe((value) => {
+                console.log('EVENT: Bell variable changed to:', value);
 
-        if (bellVar === undefined) {
-            console.warn("WARNING: The 'bell' variable was not found in the map. Check Tiled Point Object properties.");
-        }
+                if (value === true) {
+                    console.log('Ringing the bell...');
 
-        WA.state.onVariableChange('bell').subscribe((value) => {
-            console.log('EVENT: Bell variable changed to:', value);
-
-            if (value === true) {
-                currentPopup = WA.ui.openPopup("bellMessage", "Ding Dong! Someone is at the door.", [
-                    {
-                        label: "Close",
-                        className: "success",
-                        callback: (popup: any) => {
-                            popup.close();
-                            currentPopup = undefined;
+                    // Opens a popup. "bellMessage" refers to the name of the rectangle in Tiled.
+                    currentPopup = WA.ui.openPopup("bellMessage", "Ding Dong! Someone is at the door.", [
+                        {
+                            label: "Close",
+                            className: "success",
+                            callback: (popup: any) => {
+                                popup.close();
+                                currentPopup = undefined;
+                            }
                         }
-                    }
-                ]);
+                    ]);
 
-                setTimeout(() => {
-                    console.log('Resetting bell variable...');
-                    WA.state.saveVariable('bell', false);
-                }, 3000);
-            }
-        });
+                    // Auto-reset the variable to false after 3 seconds so it can be pressed again
+                    setTimeout(() => {
+                        console.log('Resetting bell variable...');
+                        // @ts-ignore
+                        WA.state.saveVariable('bell', false);
+                    }, 3000);
+                }
+            });
+        } catch (e) {
+            console.error("Variable subscription failed. Check if 'bell' exists in Tiled:", e);
+        }
 
     }).catch(e => console.error('Error bootstrapping Extra:', e));
 
