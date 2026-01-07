@@ -461,6 +461,61 @@
                  "width":32,
                  "x":64,
                  "y":544
+                }, 
+                {
+                 "height":0,
+                 "id":20,
+                 "name":"bell",
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"bell",
+                         "type":"bool",
+                         "value":true
+                        }, 
+                        {
+                         "name":"bellSound",
+                         "type":"string",
+                         "value":"resources\/audio\/doorbell-3.mp3"
+                        }, 
+                        {
+                         "name":"soundRadius",
+                         "type":"string",
+                         "value":"200"
+                        }],
+                 "rotation":0,
+                 "type":"variable",
+                 "visible":true,
+                 "width":0,
+                 "x":719,
+                 "y":219
+                }, 
+                {
+                 "height":38.6673,
+                 "id":21,
+                 "name":"bellMessage",
+                 "properties":[
+                        {
+                         "name":"bellButtonText",
+                         "type":"string",
+                         "value":"ringMe"
+                        }, 
+                        {
+                         "name":"bellPopup",
+                         "type":"string",
+                         "value":"bellpop"
+                        }, 
+                        {
+                         "name":"bellVariable",
+                         "type":"string",
+                         "value":"bell"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":56.7162,
+                 "x":638.1419,
+                 "y":242.16635
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -543,7 +598,7 @@
          "y":0
         }],
  "nextlayerid":63,
- "nextobjectid":20,
+ "nextobjectid":22,
  "orientation":"orthogonal",
  "properties":[
         {
