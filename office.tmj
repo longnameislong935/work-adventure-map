@@ -179,8 +179,8 @@
                  "type":"",
                  "visible":true,
                  "width":252.4375,
-                 "x":2.78125,
-                 "y":2.5
+                 "x":-240.21875,
+                 "y":35.5
                 }, 
                 {
                  "height":0,
@@ -259,7 +259,7 @@
                         {
                          "name":"bellSound",
                          "type":"string",
-                         "value":"resources\/sounds\/door-bell-1.mp3"
+                         "value":"https:\/\/actions.google.com\/sounds\/v1\/alarms\/bugle_tune.ogg"
                         }, 
                         {
                          "name":"soundRadius",
