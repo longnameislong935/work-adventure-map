@@ -3,6 +3,100 @@
  "infinite":false,
  "layers":[
         {
+         "data":[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 12, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 12, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 12, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+         "height":10,
+         "id":11,
+         "name":"door_open_zone1",
+         "opacity":1,
+         "properties":[
+                {
+                 "name":"autoClose",
+                 "type":"bool",
+                 "value":true
+                }, 
+                {
+                 "name":"autoOpen",
+                 "type":"bool",
+                 "value":false
+                }, 
+                {
+                 "name":"bellButtonText",
+                 "type":"string",
+                 "value":"\ud83d\udd14"
+                }, 
+                {
+                 "name":"bellPopup",
+                 "type":"string",
+                 "value":"bellMessage"
+                }, 
+                {
+                 "name":"bellVariable",
+                 "type":"string",
+                 "value":"bell"
+                }, 
+                {
+                 "name":"code",
+                 "type":"string",
+                 "value":"12345"
+                }, 
+                {
+                 "name":"doorVariable",
+                 "type":"string",
+                 "value":"doorOpened"
+                }],
+         "type":"tilelayer",
+         "visible":true,
+         "width":10,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "data":[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 12, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+         "height":10,
+         "id":12,
+         "name":"door_open_zone2",
+         "opacity":1,
+         "properties":[
+                {
+                 "name":"autoClose",
+                 "type":"bool",
+                 "value":false
+                }, 
+                {
+                 "name":"autoOpen",
+                 "type":"bool",
+                 "value":false
+                }, 
+                {
+                 "name":"doorVariable",
+                 "type":"string",
+                 "value":"doorOpened"
+                }],
+         "type":"tilelayer",
+         "visible":true,
+         "width":10,
+         "x":0,
+         "y":0
+        }, 
+        {
          "data":[1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -71,7 +165,7 @@
          "name":"floorLayer",
          "objects":[
                 {
-                 "height":67,
+                 "height":242.333333333333,
                  "id":3,
                  "name":"",
                  "rotation":0,
@@ -79,7 +173,7 @@
                     {
                      "fontfamily":"Sans Serif",
                      "pixelsize":11,
-                     "text":"Test:\nWalk next to the door, press space\n\nResult:\nThe door should open\/close automatically from the bottom\nThe door should open\/close manually from the top",
+                     "text":"Test:\nWalk next to the door, try several codes\n\nResult:\nThe door should open only when code is \"12345\"\n\n\n\n\n\n\n\n\n\n\n\n\nTest:\nWalk next to the door, click the bell button\n\nResult: the bell is rung for all users near the door. The further the users, the fainter the sound",
                      "wrap":true
                     },
                  "type":"",
@@ -100,6 +194,11 @@
                          "value":"closed_door"
                         }, 
                         {
+                         "name":"closeSound",
+                         "type":"string",
+                         "value":"resources\/sounds\/closing-door-1.mp3"
+                        }, 
+                        {
                          "name":"default",
                          "type":"bool",
                          "value":false
@@ -115,6 +214,11 @@
                          "value":"opened_door"
                         }, 
                         {
+                         "name":"openSound",
+                         "type":"string",
+                         "value":"resources\/sounds\/opening-door-1.mp3"
+                        }, 
+                        {
                          "name":"persist",
                          "type":"bool",
                          "value":true
@@ -125,6 +229,11 @@
                          "value":""
                         }, 
                         {
+                         "name":"soundRadius",
+                         "type":"int",
+                         "value":128
+                        }, 
+                        {
                          "name":"writableBy",
                          "type":"string",
                          "value":""
@@ -133,62 +242,47 @@
                  "type":"variable",
                  "visible":true,
                  "width":0,
-                 "x":146.851013493779,
-                 "y":142.403703487353
+                 "x":152.851013493779,
+                 "y":143.07037015402
                 }, 
                 {
-                 "height":60.9064005106482,
+                 "height":0,
                  "id":10,
-                 "name":"door_open_zone1",
+                 "name":"bell",
+                 "point":true,
                  "properties":[
                         {
-                         "name":"autoClose",
+                         "name":"bell",
                          "type":"bool",
                          "value":true
                         }, 
                         {
-                         "name":"autoOpen",
-                         "type":"bool",
-                         "value":true
-                        }, 
-                        {
-                         "name":"doorVariable",
+                         "name":"bellSound",
                          "type":"string",
-                         "value":"doorOpened"
+                         "value":"resources\/sounds\/door-bell-1.mp3"
+                        }, 
+                        {
+                         "name":"soundRadius",
+                         "type":"int",
+                         "value":200
                         }],
                  "rotation":0,
-                 "type":"area",
+                 "type":"variable",
                  "visible":true,
-                 "width":31.5673417280798,
-                 "x":128.497649857831,
-                 "y":130.354552312424
+                 "width":0,
+                 "x":144,
+                 "y":142
                 }, 
                 {
-                 "height":36.0239076191029,
+                 "height":33.3333333333333,
                  "id":11,
-                 "name":"door_open_zone2",
-                 "properties":[
-                        {
-                         "name":"autoClose",
-                         "type":"bool",
-                         "value":false
-                        }, 
-                        {
-                         "name":"autoOpen",
-                         "type":"bool",
-                         "value":false
-                        }, 
-                        {
-                         "name":"doorVariable",
-                         "type":"string",
-                         "value":"doorOpened"
-                        }],
+                 "name":"bellMessage",
                  "rotation":0,
-                 "type":"area",
+                 "type":"",
                  "visible":true,
-                 "width":32.310102709917,
-                 "x":128.126269366912,
-                 "y":63.5060639470783
+                 "width":55.9999999999997,
+                 "x":68.6666666666666,
+                 "y":98
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -210,7 +304,7 @@
          "height":10,
          "id":9,
          "name":"closed_door",
-         "opacity":1,
+         "opacity":0.9,
          "type":"tilelayer",
          "visible":true,
          "width":10,
@@ -239,7 +333,7 @@
          "y":0
         }],
  "nextlayerid":13,
- "nextobjectid":12,
+ "nextobjectid":13,
  "orientation":"orthogonal",
  "properties":[
         {
