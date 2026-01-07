@@ -23,6 +23,7 @@ WA.onInit().then(() => {
 
     // Bootstrap the Scripting API Extra library
     bootstrapExtra().then(() => {
+        console.log("Testing bell variable existence:", WA.state.getVariable('bell'));
         console.log('Scripting API Extra ready');
 
         // --- BELL LOGIC START ---
