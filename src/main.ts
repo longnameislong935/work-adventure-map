@@ -20,15 +20,15 @@ WA.onInit().then(() => {
     bootstrapExtra().then(() => {
         console.log('Scripting API Extra ready');
 
-        // FIXED DEBUG LINE: Using "as any" to prevent the TS18046 build error
-        const bellVar = WA.state.getVariable('bell') as any;
+        // This @ts-ignore prevents the TS18046 error by skipping type checking for the next line
+        // @ts-ignore
+        const bellVar = WA.state.getVariable('bell');
         console.log("DEBUG: Current value of 'bell' variable:", bellVar);
 
         if (bellVar === undefined) {
             console.warn("WARNING: The 'bell' variable was not found in the map. Check Tiled Point Object properties.");
         }
 
-        // Listen for changes
         WA.state.onVariableChange('bell').subscribe((value) => {
             console.log('EVENT: Bell variable changed to:', value);
 
@@ -37,7 +37,7 @@ WA.onInit().then(() => {
                     {
                         label: "Close",
                         className: "success",
-                        callback: (popup) => {
+                        callback: (popup: any) => {
                             popup.close();
                             currentPopup = undefined;
                         }
