@@ -340,6 +340,11 @@
                                  "name":"bellSound",
                                  "type":"string",
                                  "value":"https:\/\/actions.google.com\/sounds\/v1\/alarms\/bugle_tune.ogg"
+                                }, 
+                                {
+                                 "name":"default",
+                                 "type":"bool",
+                                 "value":false
                                 }],
                          "rotation":0,
                          "type":"variable",
@@ -352,6 +357,22 @@
                          "height":32.5,
                          "id":37,
                          "name":"bellMessage",
+                         "properties":[
+                                {
+                                 "name":"bellButtonText",
+                                 "type":"string",
+                                 "value":"\"Ring Bell\""
+                                }, 
+                                {
+                                 "name":"bellPopup",
+                                 "type":"string",
+                                 "value":"\"Someone is at the door!\""
+                                }, 
+                                {
+                                 "name":"variable",
+                                 "type":"string",
+                                 "value":"bell"
+                                }],
                          "rotation":0,
                          "type":"",
                          "visible":true,
@@ -360,22 +381,6 @@
                          "y":290.25
                         }],
                  "opacity":1,
-                 "properties":[
-                        {
-                         "name":"bellButtonText",
-                         "type":"string",
-                         "value":"BELLLLLLLL"
-                        }, 
-                        {
-                         "name":"bellPopup",
-                         "type":"string",
-                         "value":"bellMessage"
-                        }, 
-                        {
-                         "name":"bellVariable",
-                         "type":"string",
-                         "value":"bell"
-                        }],
                  "type":"objectgroup",
                  "visible":true,
                  "x":0,
