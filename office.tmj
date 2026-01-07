@@ -216,7 +216,7 @@
                         {
                          "name":"openSound",
                          "type":"string",
-                         "value":"resources\/sounds\/opening-door-1.mp3"
+                         "value":"https:\/\/actions.google.com\/sounds\/v1\/alarms\/bugle_tune.ogg"
                         }, 
                         {
                          "name":"persist",
