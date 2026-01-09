@@ -6,10 +6,11 @@ console.log('Script started successfully');
 
 let currentPopup: any = undefined;
 
+// Waiting for the API to be ready
 WA.onInit().then(async () => {
     console.log('Scripting API ready');
 
-    // Required to see other players and interact with them
+    // Required to "see" other players and click them for the Wave menu
     await WA.players.configureTracking();
 
     // --- CLOCK LOGIC ---
@@ -23,10 +24,10 @@ WA.onInit().then(async () => {
 
     // --- WAVE & JOIN LOGIC ---
 
-    // 1. Add the "Wave" button to the menu
+    // 1. Add the "Wave" button when you click on another person
     WA.ui.onRemotePlayerClicked.subscribe((remotePlayer) => {
         remotePlayer.addAction('Wave 👋', async () => {
-            // Get your current position to send to the other player
+            // Get your current position to send to the other player so they can "Join" you
             const myPosition = await WA.player.getPosition();
 
             remotePlayer.sendEvent('wave-event', {
@@ -38,18 +39,22 @@ WA.onInit().then(async () => {
         });
     });
 
-    // 2. Listen for the wave and show "Wave Back" or "Join"
+    // 2. Listen for when someone waves at YOU
     WA.event.on('wave-event').subscribe((event) => {
-        const sender = event.data.senderName;
-        const targetX = event.data.senderX;
-        const targetY = event.data.senderY;
+        // We use "as any" to tell TypeScript to allow us to read the data
+        const data = event.data as any;
+        
+        const sender = data.senderName;
+        const targetX = data.senderX;
+        const targetY = data.senderY;
 
+        // This opens a popup on your screen with Join and Wave Back options
         WA.ui.openPopup("clockPopup", `${sender} is waving at you!`, [
             {
                 label: "Join",
-                className: "primary", // Usually blue/prominent
+                className: "primary",
                 callback: (popup) => {
-                    // This makes your character walk to the sender
+                    // Automatically walk to the person who waved
                     WA.player.moveTo(targetX, targetY);
                     popup.close();
                 }
@@ -72,6 +77,7 @@ WA.onInit().then(async () => {
         ]);
     });
 
+    // Bootstraps the Extra library
     bootstrapExtra().then(() => {
         console.log('Scripting API Extra ready');
     }).catch(e => console.error(e));
