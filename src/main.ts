@@ -2,13 +2,23 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "1.6.2"; 
+const SCRIPT_VERSION = "1.6.3"; 
 const LOG_PREFIX = "[WA-OFFICE]"; 
 
 console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
 
 WA.onInit().then(async () => {
     console.log(`${LOG_PREFIX} Scripting API fully ready (v${SCRIPT_VERSION})`);
+
+    if ("Notification" in window && Notification.permission !== "granted") {
+        Notification.requestPermission();
+    }
+
+    try {
+        await WA.players.configureTracking();
+    } catch (err) {
+        console.error(`${LOG_PREFIX} Tracking failed:`, err);
+    }
 
     // --- RECEIVING A WAVE ---
     WA.event.on('wave-event').subscribe((event) => {
@@ -19,20 +29,20 @@ WA.onInit().then(async () => {
             const targetY = data.senderY;
             const isResponse = data.isResponse;
 
-            // 1. USE CHAT FOR AUDIO (Mac-Friendly Fallback)
-            // This triggers the native WA notification sound that you know works!
+            // 1. USE CHAT FOR AUDIO (Native WA Sound)
+            // This is the Mac-specific fix. It uses the game's internal audio.
             if (isResponse) {
                 WA.chat.sendChatMessage(`${sender} waved back! 👋`, "Wave System");
             } else {
-                WA.chat.sendChatMessage(`${sender} is waving! Click the blue banner to join.`, "Wave System");
+                WA.chat.sendChatMessage(`${sender} is waving!`, "Wave System");
             }
 
-            // 2. DESKTOP NOTIFICATION (Still here for visual cues)
+            // 2. DESKTOP NOTIFICATION
+            // Removed 'renotify' to fix TS2353 build error
             if ("Notification" in window && Notification.permission === "granted") {
                 new Notification(isResponse ? "Wave Back" : "New Wave", {
                     body: isResponse ? `${sender} waved back!` : `${sender} is waving at you!`,
-                    tag: "wa-wave",
-                    renotify: true
+                    tag: "wa-wave"
                 });
             }
 
