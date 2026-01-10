@@ -1,90 +1,71 @@
 /// <reference types="@workadventure/iframe-api-typings" />
 
-import { bootstrapExtra, Bell } from "@workadventure/scripting-api-extra";
+import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "1.8.0"; 
+const SCRIPT_VERSION = "1.9.2"; 
 const LOG_PREFIX = "[WA-WAVE]"; 
 
 WA.onInit().then(async () => {
     console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
+    await bootstrapExtra();
 
-    // Initialize the Extra library
-    const extra = await bootstrapExtra();
+    // 1. LISTENING FOR PRIVATE WAVES
+    WA.players.onPlayerEntered().subscribe((remotePlayer) => {
+        
+        // Watch for changes on any player's 'waveData'
+        remotePlayer.state.onVariableChange("waveData").subscribe((data) => {
+            if (!data) return;
+            const wave = data as { targetId: string, senderName: string, count: number };
 
-    // 1. SETUP THE NATIVE BELL
-    // We create a bell instance. It expects a name and a sound file.
-    // 'bell.mp3' must be in your public folder.
-    const waveBell = new Bell('wave-bell', 'bell.mp3');
-
-    // --- SECTION: RECEIVING A WAVE ---
-    WA.event.on('wave-event').subscribe((event) => {
-        try {
-            const data = event.data as any;
-            const sender = data.senderName;
-            const targetX = data.senderX;
-            const targetY = data.senderY;
-            const isResponse = data.isResponse;
-
-            // 1. RING THE BELL (The Mac-Friendly Fix)
-            // This uses the scripting-extra logic to play the sound.
-            waveBell.ring();
-
-            // 2. DESKTOP NOTIFICATION
-            if ("Notification" in window && Notification.permission === "granted") {
-                new Notification(isResponse ? "Wave Back" : "New Wave", {
-                    body: isResponse ? `${sender} waved back! 👋` : `${sender} is waving at you!`,
-                    tag: "wa-wave"
-                });
+            // THE FILTER: Only proceed if the wave was meant for ME
+            if (wave.targetId !== WA.player.id) {
+                return; 
             }
 
-            // 3. VISUAL BANNER
+            console.log(`${LOG_PREFIX} Private wave received from ${wave.senderName}`);
+
+            // A. Play Sound (The door.ts way)
+            WA.sound.loadSound("bell.mp3").play({ volume: 0.8 });
+
+            // B. Visual Banner
             const waveNotice = WA.ui.displayActionMessage({
-                message: isResponse ? `👋 ${sender} waved back!` : `👋 ${sender} is waving! (Click for options)`,
+                message: `👋 ${wave.senderName} is waving at you!`,
                 type: "message",
-                callback: () => {
-                    if (!isResponse) {
-                        WA.ui.openPopup("clockPopup", `${sender} is waving!`, [
-                            {
-                                label: "Wave Back 👋",
-                                className: "success",
-                                callback: (popup) => {
-                                    WA.event.broadcast('wave-event', { senderName: WA.player.name, isResponse: true });
-                                    popup.close();
-                                    waveNotice.remove();
-                                }
-                            },
-                            {
-                                label: "Join 🚶",
-                                className: "primary",
-                                callback: (popup) => {
-                                    WA.player.moveTo(targetX, targetY);
-                                    popup.close();
-                                    waveNotice.remove();
-                                }
-                            }
-                        ]);
-                    } else {
-                        waveNotice.remove();
-                    }
+                callback: () => { 
+                    // Move to the sender's current position
+                    WA.player.moveTo(remotePlayer.x, remotePlayer.y);
+                    waveNotice.remove(); 
                 }
             });
-            setTimeout(() => { waveNotice.remove(); }, 60000);
+            setTimeout(() => { waveNotice.remove(); }, 20000);
 
-        } catch (err) {
-            console.error(`${LOG_PREFIX} Error:`, err);
-        }
+            // C. Desktop Notification
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification("Private Wave", {
+                    body: `${wave.senderName} is waving at you!`,
+                    tag: `wave-${remotePlayer.id}`
+                });
+            }
+        });
     });
 
-    // --- SECTION: SENDING A WAVE ---
+    // 2. SENDING A PRIVATE WAVE
     WA.ui.onRemotePlayerClicked.subscribe((remotePlayer) => {
         remotePlayer.addAction('Wave 👋', async () => {
-            const myPosition = await WA.player.getPosition();
-            WA.event.broadcast('wave-event', {
+            
+            // Get current count or start at 0
+            const currentData = WA.player.state.waveData as any;
+            const newCount = (currentData?.count || 0) + 1;
+
+            // Update MY state with the target's ID
+            // Everyone sees this update, but only the person with this ID will react
+            WA.player.state.waveData = {
+                targetId: remotePlayer.id,
                 senderName: WA.player.name,
-                senderX: myPosition.x,
-                senderY: myPosition.y,
-                isResponse: false
-            });
+                count: newCount
+            };
+
+            WA.chat.sendChatMessage(`You waved at ${remotePlayer.name}`, "System");
         });
     });
 
