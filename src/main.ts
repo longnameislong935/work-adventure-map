@@ -2,72 +2,79 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "1.9.4"; 
+const SCRIPT_VERSION = "2.0.0"; 
 const LOG_PREFIX = "[WA-WAVE]"; 
 
+console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
+
 WA.onInit().then(async () => {
-    console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
-    await bootstrapExtra();
+    console.log(`${LOG_PREFIX} Scripting API fully ready (v${SCRIPT_VERSION})`);
 
-    // 1. LISTENING FOR PRIVATE WAVES
-    // Fixed: onPlayerEnters is a property/accessor, removed the ()
-    WA.players.onPlayerEnters.subscribe((remotePlayer: any) => {
-        
-        remotePlayer.state.onVariableChange("waveData").subscribe((data: any) => {
-            if (!data) return;
+    // Request desktop notification permission immediately
+    if ("Notification" in window && Notification.permission !== "granted") {
+        Notification.requestPermission();
+    }
+
+    // --- RECEIVING A WAVE ---
+    WA.event.on('wave-event').subscribe((event: any) => {
+        try {
+            const data = event.data;
             
-            // Check if the wave is for me
+            // SECURITY CHECK: Only show the wave if it was meant for ME
+            // This ensures the wave is private between sender and receiver
             if (data.targetId !== WA.player.id) {
-                return; 
+                return;
             }
 
-            console.log(`${LOG_PREFIX} Private wave from ${data.senderName}`);
+            const sender = data.senderName;
+            const targetX = data.senderX;
+            const targetY = data.senderY;
 
-            // A. Play Sound
-            try {
-                WA.sound.loadSound("bell.mp3").play({ volume: 0.8 });
-            } catch(e) {
-                console.warn("Audio blocked");
-            }
-
-            // B. Visual Banner
-            const waveNotice = WA.ui.displayActionMessage({
-                message: `👋 ${data.senderName} is waving at you!`,
-                type: "message",
-                callback: () => { 
-                    WA.player.moveTo(remotePlayer.x, remotePlayer.y);
-                    waveNotice.remove(); 
-                }
-            });
-            setTimeout(() => { waveNotice.remove(); }, 20000);
-
-            // C. Desktop Notification
+            // 1. DESKTOP NOTIFICATION (OS Sound)
             if ("Notification" in window && Notification.permission === "granted") {
-                new Notification("Private Wave", {
-                    body: `${data.senderName} is waving at you!`,
-                    tag: `wave-${remotePlayer.id}`
+                new Notification("New Wave", {
+                    body: `${sender} is waving at you!`,
+                    tag: "wa-wave"
                 });
             }
-        });
+
+            // 2. VISUAL BANNER WITH JOIN BUTTON
+            const waveNotice = WA.ui.displayActionMessage({
+                message: `👋 ${sender} is waving! (Click to Join)`,
+                type: "message",
+                callback: () => {
+                    WA.player.moveTo(targetX, targetY);
+                    waveNotice.remove();
+                }
+            });
+
+            // Auto-hide banner after 30 seconds
+            setTimeout(() => { waveNotice.remove(); }, 30000);
+
+        } catch (err) {
+            console.error(`${LOG_PREFIX} Error handling wave:`, err);
+        }
     });
 
-    // 2. SENDING A PRIVATE WAVE
+    // --- SENDING A WAVE ---
     WA.ui.onRemotePlayerClicked.subscribe((remotePlayer: any) => {
         remotePlayer.addAction('Wave 👋', async () => {
+            const myPosition = await WA.player.getPosition();
             
-            const currentData = WA.player.state.waveData as any;
-            const newCount = (currentData?.count || 0) + 1;
-
-            // Update MY state with the target's ID
-            WA.player.state.waveData = {
+            // Send event specifically to the person clicked
+            // Using broadcast with a targetId is the most reliable cross-room method
+            WA.event.broadcast('wave-event', {
                 targetId: remotePlayer.id,
                 senderName: WA.player.name,
-                count: newCount
-            };
-
+                senderX: myPosition.x,
+                senderY: myPosition.y
+            });
+            
             WA.chat.sendChatMessage(`You waved at ${remotePlayer.name}`, "System");
         });
     });
+
+    bootstrapExtra();
 
 }).catch(err => console.error(`${LOG_PREFIX} Init error:`, err));
 
