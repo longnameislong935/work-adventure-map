@@ -2,12 +2,15 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-console.log('Script started successfully');
+// --- VERSION TRACKING ---
+const SCRIPT_VERSION = "1.0.1"; // Update this number whenever you make a change
+console.log(`%c WorkAdventure Script Loading: v${SCRIPT_VERSION}`, "color: #00ff00; font-weight: bold;");
 
 let currentPopup: any = undefined;
 
 WA.onInit().then(async () => {
-    console.log('Scripting API ready');
+    console.log(`Scripting API fully ready (v${SCRIPT_VERSION})`);
+    console.log('Player tags: ', WA.player.tags);
 
     // This allows players to track each other for the Wave menu
     await WA.players.configureTracking();
@@ -43,7 +46,6 @@ WA.onInit().then(async () => {
         const targetX = data.senderX;
         const targetY = data.senderY;
 
-        // Creating a popup notification with options
         const waveNotice = WA.ui.openPopup("clockPopup", `${sender} is waving at you!`, [
             {
                 label: "Join",
@@ -63,7 +65,7 @@ WA.onInit().then(async () => {
             }
         ]);
 
-        // Auto-close the notification after 15 seconds if ignored
+        // Auto-close after 15 seconds
         setTimeout(() => {
             waveNotice.close();
         }, 15000);
