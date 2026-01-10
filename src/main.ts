@@ -32,7 +32,7 @@ WA.onInit().then(async () => {
 
         // 3. Interactive Banner
         const joinAction = WA.ui.displayActionMessage({
-            message: `Click 'Close' to Walk over to ${data.senderName} 🚶`,
+            message: `${data.senderName} Waved, Click 'Close' to Walk over🚶`,
             type: "message",
             callback: () => {
                 WA.player.moveTo(data.senderX, data.senderY);
