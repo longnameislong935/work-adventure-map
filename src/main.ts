@@ -2,18 +2,15 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "1.5.2"; 
+const SCRIPT_VERSION = "1.5.3"; 
 const LOG_PREFIX = "[WA-OFFICE]"; 
 
 console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
 
-// Pre-load the sound using the WorkAdventure Sound API
-// This is more reliable on Mac/Safari
-const waveSound = WA.sound.loadSound("bell.mp3");
-
 WA.onInit().then(async () => {
     console.log(`${LOG_PREFIX} Scripting API fully ready (v${SCRIPT_VERSION})`);
 
+    // Ensure desktop notifications are enabled
     if ("Notification" in window && Notification.permission !== "granted") {
         Notification.requestPermission();
     }
@@ -33,16 +30,19 @@ WA.onInit().then(async () => {
             const targetY = data.senderY;
             const isResponse = data.isResponse;
 
-            // 1. PLAY NATIVE WA SOUND
-            // This uses the game's audio engine, which is usually already 'unlocked'
-            waveSound.play({
-                volume: 0.5,
-                loop: false,
-            });
+            // 1. PLAY NATIVE WA SYSTEM SOUND
+            // This uses the internal sound bank to bypass Mac/Safari security
+            try {
+                // 'message' or 'bubble-enter' are standard sounds in the WA client
+                WA.sound.loadSound("message").play({ volume: 0.6, loop: false });
+            } catch (soundErr) {
+                console.warn(`${LOG_PREFIX} Native sound failed, trying fallback bubble.`);
+                WA.sound.loadSound("bubble-enter").play({ volume: 0.5, loop: false });
+            }
 
             // 2. DESKTOP NOTIFICATION
             if ("Notification" in window && Notification.permission === "granted") {
-                new Notification(isResponse ? "Wave Received" : "Office Wave", {
+                new Notification(isResponse ? "Wave Back Received" : "Office Wave", {
                     body: isResponse ? `${sender} waved back! 👋` : `${sender} is waving at you!`,
                 });
             }
@@ -60,7 +60,8 @@ WA.onInit().then(async () => {
                     message: `👋 ${sender} is waving! (Click for options)`,
                     type: "message",
                     callback: () => {
-                        WA.ui.openPopup("clockPopup", `${sender} is waving!`, [
+                        // Open the choice menu when banner is clicked
+                        WA.ui.openPopup("clockPopup", `${sender} is waving! What do you want to do?`, [
                             {
                                 label: "Wave Back 👋",
                                 className: "success",
@@ -100,6 +101,7 @@ WA.onInit().then(async () => {
                 senderY: myPosition.y,
                 isResponse: false
             });
+            console.log(`${LOG_PREFIX} Wave sent to ${remotePlayer.name}`);
         });
     });
 
