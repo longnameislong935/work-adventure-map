@@ -2,13 +2,13 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "3.5.0"; 
+const SCRIPT_VERSION = "4.5.0"; 
 const LOG_PREFIX = "[WA-WAVE]"; 
 
 const waveSound = WA.sound.loadSound("bell.mp3");
 
 WA.onInit().then(async () => {
-    console.log(`${LOG_PREFIX} v${SCRIPT_VERSION} Live`);
+    console.log(`${LOG_PREFIX} v${SCRIPT_VERSION} Fixed Build`);
 
     const unlockAudio = () => {
         try { waveSound.play({ volume: 0 }); } catch (err) {}
@@ -31,7 +31,6 @@ WA.onInit().then(async () => {
         }
 
         // 3. Interactive Banner
-
         const joinAction = WA.ui.displayActionMessage({
             message: `Click 'Close' to Walk over to ${data.senderName} 🚶`,
             type: "message",
@@ -44,12 +43,14 @@ WA.onInit().then(async () => {
                     targetId: data.senderId,
                     isResponse: true
                 });
-
-                WA.ui.banner.closeBanner();
             }
         });
-        // Keep banner visible longer for choice
-        setTimeout(() => { waveNotice.remove(); }, 30000);
+
+        // Keep banner visible for exactly 20 seconds
+        setTimeout(() => { 
+            try { joinAction.remove(); } catch(e) {}
+        }, 20000);
+    }); // <--- This was the missing closing brace for the receiver
 
     // --- SENDING A WAVE ---
     WA.ui.onRemotePlayerClicked.subscribe((remotePlayer: any) => {
@@ -70,7 +71,8 @@ WA.onInit().then(async () => {
         });
     });
 
-    bootstrapExtra().catch(() => {});
-});
+    bootstrapExtra().catch((e: any) => console.error("Extra error", e));
+
+}).catch(err => console.error("Init error", err));
 
 export {};
