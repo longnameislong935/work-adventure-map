@@ -1,83 +1,70 @@
 /// <reference types="@workadventure/iframe-api-typings" />
 
-import { bootstrapExtra } from "@workadventure/scripting-api-extra";
-
-const SCRIPT_VERSION = "2.0.1"; 
+const SCRIPT_VERSION = "2.0.4"; 
 const LOG_PREFIX = "[WA-WAVE]"; 
 
-// Pre-load the sound as a WA Sound Object based on the API docs
-const waveSound = WA.sound.loadSound("bell.mp3");
+console.log(`${LOG_PREFIX} >>> SCRIPT LOADING: v${SCRIPT_VERSION} <<<`);
 
-WA.onInit().then(async () => {
-    console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
+WA.onInit().then(() => {
+    console.log(`${LOG_PREFIX} WA.onInit SUCCESS`);
 
+    // 1. REQUEST PERMISSION
+    // We do this immediately. On Mac, the user may need to click the map once 
+    // for the browser to actually show the "Allow Notifications" prompt.
     if ("Notification" in window && Notification.permission !== "granted") {
         Notification.requestPermission();
     }
 
-    // --- RECEIVING A WAVE ---
+    // --- RECEIVING LOGIC ---
     WA.event.on('wave-event').subscribe((event: any) => {
-        try {
-            const data = event.data;
-            
-            // Privacy Filter
-            if (data.targetId !== WA.player.id) return;
+        const data = event.data;
+        
+        // PRIVACY FILTER: Only trigger if the wave is for ME
+        if (data.targetId !== WA.player.id) return;
 
-            const sender = data.senderName;
+        console.log(`${LOG_PREFIX} Wave received for me from: ${data.senderName}`);
 
-            // 1. PLAY NATIVE SOUND (Using the class methods from your docs)
-            try {
-                waveSound.play({
-                    volume: 0.8,
-                    loop: false,
-                    mute: false
-                });
-            } catch (soundErr) {
-                console.error(`${LOG_PREFIX} WA Sound Engine error:`, soundErr);
-            }
-
-            // 2. DESKTOP NOTIFICATION
-            if ("Notification" in window && Notification.permission === "granted") {
-                new Notification("New Wave", {
-                    body: `${sender} is waving at you!`,
-                    tag: "wa-wave"
-                });
-            }
-
-            // 3. VISUAL BANNER
-            const waveNotice = WA.ui.displayActionMessage({
-                message: `👋 ${sender} is waving! (Click to Join)`,
-                type: "message",
-                callback: () => {
-                    WA.player.moveTo(data.senderX, data.senderY);
-                    waveNotice.remove();
-                }
+        // A. DESKTOP NOTIFICATION
+        if ("Notification" in window && Notification.permission === "granted") {
+            new Notification("Office Wave", {
+                body: `${data.senderName} is waving at you!`,
+                icon: 'https://workadventu.re/favicon.ico', // Optional: adds an icon
+                tag: "wa-wave" 
             });
-            setTimeout(() => { waveNotice.remove(); }, 30000);
-
-        } catch (err) {
-            console.error(`${LOG_PREFIX} Error:`, err);
         }
+
+        // B. VISUAL BANNER (Interactive)
+        const waveNotice = WA.ui.displayActionMessage({
+            message: `👋 ${data.senderName} is waving! (Click to Join)`,
+            type: "message",
+            callback: () => {
+                WA.player.moveTo(data.senderX, data.senderY);
+                waveNotice.remove();
+            }
+        });
+        setTimeout(() => { waveNotice.remove(); }, 20000);
     });
 
-    // --- SENDING A WAVE ---
+    // --- SENDING LOGIC ---
     WA.ui.onRemotePlayerClicked.subscribe((remotePlayer: any) => {
         remotePlayer.addAction('Wave 👋', async () => {
             const myPosition = await WA.player.getPosition();
             
+            console.log(`${LOG_PREFIX} Sending wave to: ${remotePlayer.id}`);
+
+            // Broadcast the data
             WA.event.broadcast('wave-event', {
                 targetId: remotePlayer.id,
                 senderName: WA.player.name,
                 senderX: myPosition.x,
                 senderY: myPosition.y
             });
-            
+
+            // Local confirmation for the sender
             WA.chat.sendChatMessage(`You waved at ${remotePlayer.name}`, "System");
         });
     });
 
-    bootstrapExtra();
-
-}).catch(err => console.error(`${LOG_PREFIX} Init error:`, err));
+}).catch(err => console.error(`${LOG_PREFIX} CRITICAL INIT ERROR:`, err));
 
 export {};
