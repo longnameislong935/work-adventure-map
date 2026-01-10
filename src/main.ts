@@ -6,14 +6,15 @@ console.log('Script started successfully');
 
 let currentPopup: any = undefined;
 
-// Waiting for the API to be ready
+// This is the main block that runs when the map loads
 WA.onInit().then(async () => {
     console.log('Scripting API ready');
 
-    // Required to "see" other players and click them for the Wave menu
+    // This line is vital: it allows your script to "talk" to other players
     await WA.players.configureTracking();
 
-    // --- CLOCK LOGIC ---
+    // --- SECTION 1: THE CLOCK ---
+    // This handles your existing clock logic
     WA.room.area.onEnter('clock').subscribe(() => {
         const today = new Date();
         const time = today.getHours() + ":" + today.getMinutes().toString().padStart(2, '0');
@@ -22,59 +23,49 @@ WA.onInit().then(async () => {
 
     WA.room.area.onLeave('clock').subscribe(closePopup)
 
-    // --- WAVE & JOIN LOGIC ---
-
-    // 1. Add the "Wave" button when you click on another person
+    // --- SECTION 2: SENDING A WAVE ---
+    // This adds the "Wave" button when you click on someone else
     WA.ui.onRemotePlayerClicked.subscribe((remotePlayer) => {
         remotePlayer.addAction('Wave 👋', async () => {
-            // Get your current position to send to the other player so they can "Join" you
+            // Get your coordinates so the other person knows where to walk
             const myPosition = await WA.player.getPosition();
 
+            // Send the wave data to that specific person
             remotePlayer.sendEvent('wave-event', {
                 senderName: WA.player.name,
                 senderX: myPosition.x,
                 senderY: myPosition.y
             });
+            
+            // Show a confirmation in your own chat so you know it sent
             WA.chat.sendChatMessage(`You waved at ${remotePlayer.name}`, "System");
         });
     });
 
-    // 2. Listen for when someone waves at YOU
+    // --- SECTION 3: RECEIVING A WAVE ---
+    // This part catches the wave sent by someone else
     WA.event.on('wave-event').subscribe((event) => {
-        // We use "as any" to tell TypeScript to allow us to read the data
+        // 'as any' helps us bypass strict TypeScript rules
         const data = event.data as any;
-        
         const sender = data.senderName;
         const targetX = data.senderX;
         const targetY = data.senderY;
 
-        // This opens a popup on your screen with Join and Wave Back options
-        WA.ui.openPopup("clockPopup", `${sender} is waving at you!`, [
-            {
-                label: "Join",
-                className: "primary",
-                callback: (popup) => {
-                    // Automatically walk to the person who waved
-                    WA.player.moveTo(targetX, targetY);
-                    popup.close();
-                }
+        // This creates a notification banner at the bottom of the receiver's screen
+        const waveNotification = WA.ui.displayActionMessage({
+            message: `${sender} is waving at you! Click here to join them.`,
+            callback: async () => {
+                // If they click the banner, they walk to the sender
+                WA.chat.sendChatMessage(`Walking to ${sender}...`);
+                WA.player.moveTo(targetX, targetY);
             },
-            {
-                label: "Wave Back",
-                className: "success",
-                callback: (popup) => {
-                    WA.chat.sendChatMessage(`You waved back at ${sender}!`);
-                    popup.close();
-                }
-            },
-            {
-                label: "Close",
-                className: "normal",
-                callback: (popup) => {
-                    popup.close();
-                }
-            }
-        ]);
+            type: "success"
+        });
+
+        // This removes the notification after 15 seconds so it doesn't stay forever
+        setTimeout(() => {
+            waveNotification.remove();
+        }, 15000);
     });
 
     // Bootstraps the Extra library
@@ -84,6 +75,7 @@ WA.onInit().then(async () => {
 
 }).catch(e => console.error(e));
 
+// Helper function to close the clock popup
 function closePopup(){
     if (currentPopup !== undefined) {
         currentPopup.close();
