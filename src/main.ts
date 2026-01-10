@@ -2,13 +2,13 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "3.9.1"; 
+const SCRIPT_VERSION = "4.0.0"; 
 const LOG_PREFIX = "[WA-WAVE]"; 
 
 const waveSound = WA.sound.loadSound("bell.mp3");
 
 WA.onInit().then(async () => {
-    console.log(`${LOG_PREFIX} v${SCRIPT_VERSION} Single Banner UI`);
+    console.log(`${LOG_PREFIX} v${SCRIPT_VERSION} Banner Mode Active`);
 
     const unlockAudio = () => {
         try { waveSound.play({ volume: 0 }); } catch (err) {}
@@ -22,32 +22,39 @@ WA.onInit().then(async () => {
         if (!data || data.senderId === WA.player.id || data.targetId !== WA.player.id) return;
 
         // 1. Play Sound
-        try { waveSound.play({ volume: 0.7 }); } catch (err) {}
+        try { waveSound.play({ volume: 0.8 }); } catch (err) {}
 
-        // 2. The Single Action Banner
-        // This is the most reliable UI element for mobile/moving players.
-        const waveNotice = WA.ui.displayActionMessage({
-            message: `👋 ${data.senderName} is waving! Click here to JOIN them.`,
+        // 2. Open the Top Banner (Persistent & Highly Visible)
+        WA.ui.banner.openBanner({
+            id: "wave-banner",
+            text: `👋 ${data.senderName} is waving at you!`,
+            bgColor: "#1b263b",
+            textColor: "#ffffff",
+            closable: true,
+            timeToClose: 10000 // Closes automatically after 10 seconds
+        });
+
+        // 3. The Clickable "Join" Action (Bottom of screen)
+        const joinAction = WA.ui.displayActionMessage({
+            message: `Click to Join ${data.senderName} 🚶`,
             type: "message",
             callback: () => {
-                // ACTION: Join the person
                 WA.player.moveTo(data.senderX, data.senderY);
                 
-                // Send automated Wave Back
+                // Response event
                 WA.event.broadcast('wave-event', {
                     senderId: WA.player.id,
                     senderName: WA.player.name,
                     targetId: data.senderId,
                     isResponse: true
                 });
-                waveNotice.remove();
+
+                joinAction.remove();
+                WA.ui.banner.closeBanner();
             }
         });
 
-        // Auto-remove after 15 seconds to keep the screen clear
-        setTimeout(() => { 
-            try { waveNotice.remove(); } catch(e) {}
-        }, 15000);
+        setTimeout(() => { joinAction.remove(); }, 10000);
     });
 
     // --- SENDING A WAVE ---
