@@ -3,7 +3,7 @@
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
 // This allows you to ensure you are loading the correct script in the browser as caching can cause delays in loading changes. using dev tools in chrome and console
-const SCRIPT_VERSION = "1.2.0"; 
+const SCRIPT_VERSION = "1.2.1"; 
 // This allows for easy searching in the console for custom logging I.E. console.log(`${LOG_PREFIX} YOUR LOG HERE!`);
 const LOG_PREFIX = "[WA-OFFICE]"; 
 
@@ -65,12 +65,13 @@ WA.onInit().then(async () => {
                 });
             }
 
-            // 3. Choice Banner (The logic for Wave Back and Join)
+            // 3. Choice Banner or Response Message
             if (isResponse) {
-                // If this is just a "Wave Back", show a simple message
+                // Fix for TS2345: displayActionMessage REQUIRES a callback
                 WA.ui.displayActionMessage({
                     message: `${sender} waved back at you! 👋`,
-                    type: "message"
+                    type: "message",
+                    callback: () => { /* Logic not needed for simple notification */ }
                 });
             } else {
                 // If it's a new wave, show the two buttons
@@ -79,8 +80,8 @@ WA.onInit().then(async () => {
                         label: "Wave Back 👋",
                         className: "success",
                         callback: (popup) => {
-                            // Find the sender in the room to send an event back
-                            WA.event.sendEvent('wave-event', {
+                            // Fix for TS2339: Using WA.room.sendEvent to broadcast the response
+                            WA.room.sendEvent('wave-event', {
                                 senderName: WA.player.name,
                                 isResponse: true
                             });
@@ -98,7 +99,9 @@ WA.onInit().then(async () => {
                 ]);
 
                 // Auto-close after 20 seconds
-                setTimeout(() => { waveNotice.close(); }, 20000);
+                setTimeout(() => { 
+                    try { waveNotice.close(); } catch(e) { /* already closed */ }
+                }, 20000);
             }
 
         } catch (err) {
