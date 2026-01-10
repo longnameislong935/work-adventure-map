@@ -2,98 +2,71 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "3.1.0"; 
-const LOG_PREFIX = "[WA-OFFICE]"; 
+const SCRIPT_VERSION = "3.3.0"; 
+const LOG_PREFIX = "[WA-WAVE]"; 
 
-console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
-
-// 1. PRE-LOAD THE SOUND OBJECT (Global scope)
-// According to docs: WA.sound.loadSound returns a Sound class object
-const waveSound = WA.sound.loadSound("bell.mp3");
+// 1. WEB-BASED AUDIO (Using a reliable public notification sound)
+const EXTERNAL_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
+console.log(`${LOG_PREFIX} Loading audio from: ${EXTERNAL_SOUND_URL}`);
+const waveSound = WA.sound.loadSound(EXTERNAL_SOUND_URL);
 
 WA.onInit().then(async () => {
-    console.log(`${LOG_PREFIX} Scripting API fully ready (v${SCRIPT_VERSION})`);
+    console.log(`${LOG_PREFIX} v${SCRIPT_VERSION} Script Initialized`);
 
-    // Force permission check for desktop popups
-    if ("Notification" in window && Notification.permission !== "granted") {
-        Notification.requestPermission();
-    }
+    // --- AUDIO UNLOCKER ---
+    const unlockAudio = () => {
+        console.log(`${LOG_PREFIX} User clicked. Attempting to prime audio engine...`);
+        waveSound.play({ volume: 0.01 }).catch(e => console.warn(`${LOG_PREFIX} Prime failed:`, e));
+        window.removeEventListener('click', unlockAudio);
+    };
+    window.addEventListener('click', unlockAudio);
 
     // --- RECEIVING A WAVE ---
-    WA.event.on('wave-event').subscribe((event) => {
+    WA.event.on('wave-event').subscribe((event: any) => {
         try {
-            const data = event.data as any;
-            
-            // --- PRIVACY FILTER ---
-            // Only trigger sound/popup if I am the target or if it's a general broadcast
+            const data = event.data;
+            console.log(`${LOG_PREFIX} New event detected in room:`, data);
+
+            // 1. SENDER SILENCE
+            if (data.senderId === WA.player.id) {
+                console.log(`${LOG_PREFIX} Ignoring: I am the sender.`);
+                return; 
+            }
+
+            // 2. PRIVACY FILTER
             if (data.targetId && data.targetId !== WA.player.id) {
+                console.log(`${LOG_PREFIX} Ignoring: Wave is for ${data.targetId}, not me (${WA.player.id}).`);
                 return;
             }
 
-            const sender = data.senderName;
-            const targetX = data.senderX;
-            const targetY = data.senderY;
-            const isResponse = data.isResponse;
+            console.log(`${LOG_PREFIX} MATCH FOUND! Triggering notification and sound.`);
 
-            // 1. PLAY NATIVE SOUND
-            // Using the configuration object format from the documentation
-            waveSound.play({
-                volume: 0.5,
-                loop: false,
-                rate: 1,
-                detune: 1,
-                delay: 0,
-                seek: 0,
-                mute: false
-            });
-
-            // 2. TRIGGER OS NOTIFICATION
-            if ("Notification" in window && Notification.permission === "granted") {
-                new Notification(isResponse ? "Wave Back" : "New Wave", {
-                    body: isResponse ? `${sender} waved back! 👋` : `${sender} is waving at you!`,
-                });
+            // 3. PLAY SOUND (WA CLASS)
+            console.log(`${LOG_PREFIX} Attempting WA.sound.play()...`);
+            try {
+                waveSound.play({ volume: 0.8, loop: false });
+                console.log(`${LOG_PREFIX} Play command sent to engine.`);
+            } catch (err) {
+                console.error(`${LOG_PREFIX} WA Sound Engine crashed:`, err);
             }
 
-            // 3. VISUAL BANNER
-            const waveMessage = isResponse ? `${sender} waved back! 👋` : `👋 ${sender} is waving! (Click for options)`;
-            const waveNotice = WA.ui.displayActionMessage({
-                message: waveMessage,
+            // 4. DESKTOP NOTIFICATION
+            if ("Notification" in window && Notification.permission === "granted") {
+                console.log(`${LOG_PREFIX} Triggering Desktop Notification.`);
+                new Notification("Office Wave", { body: `${data.senderName} is waving!` });
+            } else {
+                console.warn(`${LOG_PREFIX} Notification skipped (Permission: ${Notification.permission})`);
+            }
+
+            // 5. VISUAL BANNER
+            WA.ui.displayActionMessage({
+                message: `👋 ${data.senderName} is waving!`,
                 type: "message",
-                callback: () => {
-                    if (isResponse) {
-                        waveNotice.remove();
-                    } else {
-                        WA.ui.openPopup("clockPopup", `${sender} is waving!`, [
-                            {
-                                label: "Wave Back 👋",
-                                className: "success",
-                                callback: (popup) => {
-                                    WA.event.broadcast('wave-event', { 
-                                        senderName: WA.player.name, 
-                                        targetId: data.senderId, // Wave back to the original sender
-                                        isResponse: true 
-                                    });
-                                    popup.close();
-                                    waveNotice.remove();
-                                }
-                            },
-                            {
-                                label: "Join 🚶",
-                                className: "primary",
-                                callback: (popup) => {
-                                    WA.player.moveTo(targetX, targetY);
-                                    popup.close();
-                                    waveNotice.remove();
-                                }
-                            }
-                        ]);
-                    }
-                }
+                callback: () => { WA.player.moveTo(data.senderX, data.senderY); }
             });
-            setTimeout(() => { waveNotice.remove(); }, 30000);
 
         } catch (err) {
-            console.error(`${LOG_PREFIX} Error handling wave:`, err);
+            console.error(`${LOG_PREFIX} Fatal Error in Receive Loop:`, err);
         }
     });
 
@@ -102,20 +75,21 @@ WA.onInit().then(async () => {
         remotePlayer.addAction('Wave 👋', async () => {
             const myPosition = await WA.player.getPosition();
             
-            // We use broadcast but include the target's ID for privacy
+            console.log(`${LOG_PREFIX} Waving at ${remotePlayer.name} (ID: ${remotePlayer.id})`);
+
             WA.event.broadcast('wave-event', {
-                senderId: WA.player.id,
+                senderId: WA.player.id, 
                 senderName: WA.player.name,
                 senderX: myPosition.x,
                 senderY: myPosition.y,
-                targetId: remotePlayer.id, // The recipient's ID
-                isResponse: false
+                targetId: remotePlayer.id
             });
+
+            WA.chat.sendChatMessage(`Wave sent to ${remotePlayer.name}`, "System");
         });
     });
 
-    bootstrapExtra().catch(err => console.error(`${LOG_PREFIX} Extra error:`, err));
-
-}).catch(err => console.error(`${LOG_PREFIX} Init error:`, err));
+    bootstrapExtra().catch(() => {});
+});
 
 export {};
