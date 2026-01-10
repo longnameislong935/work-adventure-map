@@ -2,7 +2,7 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "1.6.1"; 
+const SCRIPT_VERSION = "1.6.0"; 
 const LOG_PREFIX = "[WA-OFFICE]"; 
 
 console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
@@ -10,6 +10,7 @@ console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
 WA.onInit().then(async () => {
     console.log(`${LOG_PREFIX} Scripting API fully ready (v${SCRIPT_VERSION})`);
 
+    // Force permission check
     if ("Notification" in window && Notification.permission !== "granted") {
         Notification.requestPermission();
     }
@@ -30,15 +31,15 @@ WA.onInit().then(async () => {
             const isResponse = data.isResponse;
 
             // 1. TRIGGER OS NOTIFICATION
+            // On Mac, the OS will play its own sound automatically if notifications are allowed.
             if ("Notification" in window && Notification.permission === "granted") {
                 new Notification(isResponse ? "Wave Back" : "New Wave", {
                     body: isResponse ? `${sender} waved back! 👋` : `${sender} is waving at you!`,
-                    tag: "wa-wave", // Groups notifications
-                    renotify: true   // Forces the phone/Mac to vibrate/sound even if one is already there
+                    // We remove 'silent: true' so the Mac OS plays its default 'ding'
                 });
             }
 
-            // 2. VISUAL BANNER
+            // 2. VISUAL BANNER (Stacking)
             if (isResponse) {
                 const backNotice = WA.ui.displayActionMessage({
                     message: `${sender} waved back! 👋`,
@@ -48,9 +49,10 @@ WA.onInit().then(async () => {
                 setTimeout(() => { backNotice.remove(); }, 10000);
             } else {
                 const waveNotice = WA.ui.displayActionMessage({
-                    message: `👋 ${sender} is waving!`,
+                    message: `👋 ${sender} is waving! (Click for options)`,
                     type: "message",
                     callback: () => {
+                        // Open the popup menu for Join/Wave Back
                         WA.ui.openPopup("clockPopup", `${sender} is waving!`, [
                             {
                                 label: "Wave Back 👋",
