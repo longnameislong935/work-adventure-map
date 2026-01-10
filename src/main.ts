@@ -2,10 +2,14 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "1.5.1"; 
+const SCRIPT_VERSION = "1.5.2"; 
 const LOG_PREFIX = "[WA-OFFICE]"; 
 
 console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
+
+// Pre-load the sound using the WorkAdventure Sound API
+// This is more reliable on Mac/Safari
+const waveSound = WA.sound.loadSound("bell.mp3");
 
 WA.onInit().then(async () => {
     console.log(`${LOG_PREFIX} Scripting API fully ready (v${SCRIPT_VERSION})`);
@@ -29,16 +33,22 @@ WA.onInit().then(async () => {
             const targetY = data.senderY;
             const isResponse = data.isResponse;
 
-            // 1. DESKTOP NOTIFICATION (System Sound)
+            // 1. PLAY NATIVE WA SOUND
+            // This uses the game's audio engine, which is usually already 'unlocked'
+            waveSound.play({
+                volume: 0.5,
+                loop: false,
+            });
+
+            // 2. DESKTOP NOTIFICATION
             if ("Notification" in window && Notification.permission === "granted") {
                 new Notification(isResponse ? "Wave Received" : "Office Wave", {
                     body: isResponse ? `${sender} waved back! 👋` : `${sender} is waving at you!`,
                 });
             }
 
-            // 2. INTERACTIVE BANNER
+            // 3. INTERACTIVE BANNER
             if (isResponse) {
-                // If it's a "Wave Back", just show a simple notification banner
                 const backNotice = WA.ui.displayActionMessage({
                     message: `${sender} waved back! 👋`,
                     type: "message",
@@ -46,27 +56,22 @@ WA.onInit().then(async () => {
                 });
                 setTimeout(() => { backNotice.remove(); }, 10000);
             } else {
-                // If it's a new wave, show the interactive "Click for options" banner
                 const waveNotice = WA.ui.displayActionMessage({
                     message: `👋 ${sender} is waving! (Click for options)`,
                     type: "message",
                     callback: () => {
-                        // Open the choice menu when they click the blue banner
-                        WA.ui.openPopup("clockPopup", `${sender} is waving! What would you like to do?`, [
+                        WA.ui.openPopup("clockPopup", `${sender} is waving!`, [
                             {
                                 label: "Wave Back 👋",
                                 className: "success",
                                 callback: (popup) => {
-                                    WA.event.broadcast('wave-event', { 
-                                        senderName: WA.player.name, 
-                                        isResponse: true 
-                                    });
+                                    WA.event.broadcast('wave-event', { senderName: WA.player.name, isResponse: true });
                                     popup.close();
                                     waveNotice.remove();
                                 }
                             },
                             {
-                                label: "Join🚶",
+                                label: "Join 🚶",
                                 className: "primary",
                                 callback: (popup) => {
                                     WA.player.moveTo(targetX, targetY);
