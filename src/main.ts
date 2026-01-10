@@ -1,70 +1,103 @@
 /// <reference types="@workadventure/iframe-api-typings" />
 
-const SCRIPT_VERSION = "2.0.4"; 
-const LOG_PREFIX = "[WA-WAVE]"; 
+import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-console.log(`${LOG_PREFIX} >>> SCRIPT LOADING: v${SCRIPT_VERSION} <<<`);
+const SCRIPT_VERSION = "1.6.1"; 
+const LOG_PREFIX = "[WA-OFFICE]"; 
 
-WA.onInit().then(() => {
-    console.log(`${LOG_PREFIX} WA.onInit SUCCESS`);
+console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
 
-    // 1. REQUEST PERMISSION
-    // We do this immediately. On Mac, the user may need to click the map once 
-    // for the browser to actually show the "Allow Notifications" prompt.
+WA.onInit().then(async () => {
+    console.log(`${LOG_PREFIX} Scripting API fully ready (v${SCRIPT_VERSION})`);
+
     if ("Notification" in window && Notification.permission !== "granted") {
         Notification.requestPermission();
     }
 
-    // --- RECEIVING LOGIC ---
-    WA.event.on('wave-event').subscribe((event: any) => {
-        const data = event.data;
-        
-        // PRIVACY FILTER: Only trigger if the wave is for ME
-        if (data.targetId !== WA.player.id) return;
+    try {
+        await WA.players.configureTracking();
+    } catch (err) {
+        console.error(`${LOG_PREFIX} Tracking failed:`, err);
+    }
 
-        console.log(`${LOG_PREFIX} Wave received for me from: ${data.senderName}`);
+    // --- RECEIVING A WAVE ---
+    WA.event.on('wave-event').subscribe((event) => {
+        try {
+            const data = event.data as any;
+            const sender = data.senderName;
+            const targetX = data.senderX;
+            const targetY = data.senderY;
+            const isResponse = data.isResponse;
 
-        // A. DESKTOP NOTIFICATION
-        if ("Notification" in window && Notification.permission === "granted") {
-            new Notification("Office Wave", {
-                body: `${data.senderName} is waving at you!`,
-                icon: 'https://workadventu.re/favicon.ico', // Optional: adds an icon
-                tag: "wa-wave" 
-            });
-        }
-
-        // B. VISUAL BANNER (Interactive)
-        const waveNotice = WA.ui.displayActionMessage({
-            message: `👋 ${data.senderName} is waving! (Click to Join)`,
-            type: "message",
-            callback: () => {
-                WA.player.moveTo(data.senderX, data.senderY);
-                waveNotice.remove();
+            // 1. TRIGGER OS NOTIFICATION
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification(isResponse ? "Wave Back" : "New Wave", {
+                    body: isResponse ? `${sender} waved back! 👋` : `${sender} is waving at you!`,
+                    tag: "wa-wave", // Groups notifications
+                    renotify: true   // Forces the phone/Mac to vibrate/sound even if one is already there
+                });
             }
-        });
-        setTimeout(() => { waveNotice.remove(); }, 20000);
+
+            // 2. VISUAL BANNER
+            if (isResponse) {
+                const backNotice = WA.ui.displayActionMessage({
+                    message: `${sender} waved back! 👋`,
+                    type: "message",
+                    callback: () => { backNotice.remove(); }
+                });
+                setTimeout(() => { backNotice.remove(); }, 10000);
+            } else {
+                const waveNotice = WA.ui.displayActionMessage({
+                    message: `👋 ${sender} is waving!`,
+                    type: "message",
+                    callback: () => {
+                        WA.ui.openPopup("clockPopup", `${sender} is waving!`, [
+                            {
+                                label: "Wave Back 👋",
+                                className: "success",
+                                callback: (popup) => {
+                                    WA.event.broadcast('wave-event', { senderName: WA.player.name, isResponse: true });
+                                    popup.close();
+                                    waveNotice.remove();
+                                }
+                            },
+                            {
+                                label: "Join 🚶",
+                                className: "primary",
+                                callback: (popup) => {
+                                    WA.player.moveTo(targetX, targetY);
+                                    popup.close();
+                                    waveNotice.remove();
+                                }
+                            }
+                        ]);
+                    }
+                });
+                setTimeout(() => { waveNotice.remove(); }, 60000);
+            }
+
+        } catch (err) {
+            console.error(`${LOG_PREFIX} Error handling wave:`, err);
+        }
     });
 
-    // --- SENDING LOGIC ---
-    WA.ui.onRemotePlayerClicked.subscribe((remotePlayer: any) => {
+    // --- SENDING A WAVE ---
+    WA.ui.onRemotePlayerClicked.subscribe((remotePlayer) => {
         remotePlayer.addAction('Wave 👋', async () => {
             const myPosition = await WA.player.getPosition();
-            
-            console.log(`${LOG_PREFIX} Sending wave to: ${remotePlayer.id}`);
-
-            // Broadcast the data
-            WA.event.broadcast('wave-event', {
-                targetId: remotePlayer.id,
+            remotePlayer.sendEvent('wave-event', {
                 senderName: WA.player.name,
                 senderX: myPosition.x,
-                senderY: myPosition.y
+                senderY: myPosition.y,
+                isResponse: false
             });
-
-            // Local confirmation for the sender
-            WA.chat.sendChatMessage(`You waved at ${remotePlayer.name}`, "System");
         });
     });
 
-}).catch(err => console.error(`${LOG_PREFIX} CRITICAL INIT ERROR:`, err));
+    bootstrapExtra().then(() => {
+        console.log(`${LOG_PREFIX} Scripting API Extra ready`);
+    }).catch(err => console.error(`${LOG_PREFIX} Extra error:`, err));
+
+}).catch(err => console.error(`${LOG_PREFIX} Init error:`, err));
 
 export {};
