@@ -2,7 +2,7 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "1.3.0"; 
+const SCRIPT_VERSION = "1.3.1"; 
 const LOG_PREFIX = "[WA-OFFICE]"; 
 
 console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
@@ -46,12 +46,10 @@ WA.onInit().then(async () => {
             const targetY = data.senderY;
             const isResponse = data.isResponse;
 
-            // Sound
             const audio = new Audio("/bell.mp3");
             audio.play().catch(() => {});
 
             if (isResponse) {
-                // If someone waves back, show a simple non-clickable banner
                 const backNotice = WA.ui.displayActionMessage({
                     message: `${sender} waved back! 👋`,
                     type: "message",
@@ -59,22 +57,21 @@ WA.onInit().then(async () => {
                 });
                 setTimeout(() => { backNotice.remove(); }, 10000);
             } else {
-                // NEW STACKING LOGIC:
-                // We show one banner that, when clicked, opens the options.
-                // Because these are "ActionMessages", if 3 people wave, 
-                // you will see 3 banners stacked at the bottom of the screen.
-                
                 const waveBanner = WA.ui.displayActionMessage({
                     message: `👋 ${sender} is waving! (Click for options)`,
                     type: "message",
                     callback: () => {
-                        // When they click the specific banner, then show the choice
-                        const choicePopup = WA.ui.openPopup("clockPopup", `Options for ${sender}:`, [
+                        // Removed variable declaration to fix TS6133
+                        WA.ui.openPopup("clockPopup", `Options for ${sender}:`, [
                             {
                                 label: "Wave Back 👋",
                                 className: "success",
                                 callback: (popup) => {
-                                    WA.room.sendEvent('wave-event', { senderName: WA.player.name, isResponse: true });
+                                    // Using broadcast to ensure the response reaches the original sender
+                                    WA.event.broadcast('wave-event', { 
+                                        senderName: WA.player.name, 
+                                        isResponse: true 
+                                    });
                                     popup.close();
                                     waveBanner.remove();
                                 }
@@ -92,7 +89,6 @@ WA.onInit().then(async () => {
                     }
                 });
 
-                // Auto-remove banners after 60 seconds
                 setTimeout(() => { waveBanner.remove(); }, 60000);
             }
 
