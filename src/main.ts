@@ -2,7 +2,7 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "1.5.3"; 
+const SCRIPT_VERSION = "1.6.0"; 
 const LOG_PREFIX = "[WA-OFFICE]"; 
 
 console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
@@ -10,7 +10,7 @@ console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
 WA.onInit().then(async () => {
     console.log(`${LOG_PREFIX} Scripting API fully ready (v${SCRIPT_VERSION})`);
 
-    // Ensure desktop notifications are enabled
+    // Force permission check
     if ("Notification" in window && Notification.permission !== "granted") {
         Notification.requestPermission();
     }
@@ -30,24 +30,16 @@ WA.onInit().then(async () => {
             const targetY = data.senderY;
             const isResponse = data.isResponse;
 
-            // 1. PLAY NATIVE WA SYSTEM SOUND
-            // This uses the internal sound bank to bypass Mac/Safari security
-            try {
-                // 'message' or 'bubble-enter' are standard sounds in the WA client
-                WA.sound.loadSound("message").play({ volume: 0.6, loop: false });
-            } catch (soundErr) {
-                console.warn(`${LOG_PREFIX} Native sound failed, trying fallback bubble.`);
-                WA.sound.loadSound("bubble-enter").play({ volume: 0.5, loop: false });
-            }
-
-            // 2. DESKTOP NOTIFICATION
+            // 1. TRIGGER OS NOTIFICATION
+            // On Mac, the OS will play its own sound automatically if notifications are allowed.
             if ("Notification" in window && Notification.permission === "granted") {
-                new Notification(isResponse ? "Wave Back Received" : "Office Wave", {
+                new Notification(isResponse ? "Wave Back" : "New Wave", {
                     body: isResponse ? `${sender} waved back! 👋` : `${sender} is waving at you!`,
+                    // We remove 'silent: true' so the Mac OS plays its default 'ding'
                 });
             }
 
-            // 3. INTERACTIVE BANNER
+            // 2. VISUAL BANNER (Stacking)
             if (isResponse) {
                 const backNotice = WA.ui.displayActionMessage({
                     message: `${sender} waved back! 👋`,
@@ -60,8 +52,8 @@ WA.onInit().then(async () => {
                     message: `👋 ${sender} is waving! (Click for options)`,
                     type: "message",
                     callback: () => {
-                        // Open the choice menu when banner is clicked
-                        WA.ui.openPopup("clockPopup", `${sender} is waving! What do you want to do?`, [
+                        // Open the popup menu for Join/Wave Back
+                        WA.ui.openPopup("clockPopup", `${sender} is waving!`, [
                             {
                                 label: "Wave Back 👋",
                                 className: "success",
@@ -101,7 +93,6 @@ WA.onInit().then(async () => {
                 senderY: myPosition.y,
                 isResponse: false
             });
-            console.log(`${LOG_PREFIX} Wave sent to ${remotePlayer.name}`);
         });
     });
 
