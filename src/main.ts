@@ -2,15 +2,17 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "1.4.1"; 
+const SCRIPT_VERSION = "1.4.4"; 
 const LOG_PREFIX = "[WA-OFFICE]"; 
 
 console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
 
+// Pre-create the audio object at the top level to help the browser "prime" the resource
+const waveSound = new Audio("resources/sounds/bell.mp3");
+
 WA.onInit().then(async () => {
     console.log(`${LOG_PREFIX} Scripting API fully ready (v${SCRIPT_VERSION})`);
 
-    // Ensure we have notification permissions
     if ("Notification" in window && Notification.permission !== "granted") {
         Notification.requestPermission();
     }
@@ -28,30 +30,36 @@ WA.onInit().then(async () => {
         try {
             const data = event.data as any;
             const sender = data.senderName;
+            const targetX = data.senderX;
+            const targetY = data.senderY;
 
-            // 1. PLAY CUSTOM AUDIO FIRST
-            // We use the root path to find bell.mp3 in the public folder
-            const audio = new Audio("bell.mp3"); 
-            audio.volume = 1.0;
-            
-            audio.play()
-                .then(() => console.log(`${LOG_PREFIX} Custom bell sound played.`))
-                .catch((err) => console.warn(`${LOG_PREFIX} Custom sound blocked.`, err));
+            // 1. PLAY CUSTOM AUDIO
+            // We use the pre-defined object to avoid 'resource not suitable' errors
+            waveSound.play()
+                .then(() => console.log(`${LOG_PREFIX} Bell sound played successfully.`))
+                .catch((err) => {
+                    console.warn(`${LOG_PREFIX} Audio play failed. This is usually due to browser autoplay policies. Click the map!`, err);
+                });
 
-            // 2. DESKTOP NOTIFICATION (Silent mode)
+            // 2. DESKTOP NOTIFICATION
             if ("Notification" in window && Notification.permission === "granted") {
                 new Notification("Office Wave", {
                     body: `${sender} is waving at you!`,
-                    silent: true // This stops the OS from playing its default 'ding'
+                    silent: true 
                 });
             }
 
             // 3. VISUAL BANNER
-            WA.ui.displayActionMessage({
-                message: `👋 ${sender} is waving at you!`,
+            const waveNotice = WA.ui.displayActionMessage({
+                message: `👋 ${sender} is waving! Click to join them.`,
                 type: "message",
-                callback: () => { /* Logic here if needed later */ }
+                callback: async () => {
+                    WA.player.moveTo(targetX, targetY);
+                    waveNotice.remove();
+                }
             });
+
+            setTimeout(() => { waveNotice.remove(); }, 60000);
 
         } catch (err) {
             console.error(`${LOG_PREFIX} Error in wave logic:`, err);
