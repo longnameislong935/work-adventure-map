@@ -3,7 +3,7 @@
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
 // This allows you to ensure you are loading the correct script in the browser as caching can cause delays in loading changes. using dev tools in chrome and console
-const SCRIPT_VERSION = "1.0.8"; 
+const SCRIPT_VERSION = "1.2.0"; 
 // This allows for easy searching in the console for custom logging I.E. console.log(`${LOG_PREFIX} YOUR LOG HERE!`);
 const LOG_PREFIX = "[WA-OFFICE]"; 
 
@@ -12,7 +12,7 @@ console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
 WA.onInit().then(async () => {
     console.log(`${LOG_PREFIX} Scripting API fully ready (v${SCRIPT_VERSION})`);
 
-    // Request permission for Desktop Notifications as soon as the map loads
+    // Request permission for Desktop Notifications
     if ("Notification" in window && Notification.permission !== "granted") {
         Notification.requestPermission();
     }
@@ -20,7 +20,6 @@ WA.onInit().then(async () => {
     try {
         await WA.players.configureTracking();
     } catch (err) {
-        // Changed to 'err' and utilized in log to satisfy TS6133
         console.error(`${LOG_PREFIX} Tracking failed:`, err);
     }
 
@@ -32,9 +31,10 @@ WA.onInit().then(async () => {
                 remotePlayer.sendEvent('wave-event', {
                     senderName: WA.player.name,
                     senderX: myPosition.x,
-                    senderY: myPosition.y
+                    senderY: myPosition.y,
+                    isResponse: false
                 });
-                WA.chat.sendChatMessage(`You waved at ${remotePlayer.name}`, "System");
+                console.log(`${LOG_PREFIX} Wave sent to ${remotePlayer.name}`);
             } catch (err) {
                 console.error(`${LOG_PREFIX} Error sending wave:`, err);
             }
@@ -50,40 +50,62 @@ WA.onInit().then(async () => {
             const sender = data.senderName;
             const targetX = data.senderX;
             const targetY = data.senderY;
+            const isResponse = data.isResponse;
 
-            // 1. Play a Notification Sound (Uses a standard system beep)
-            const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+            // 1. Play Local Bell Sound
+            const audio = new Audio("/bell.mp3");
             audio.play().catch(() => {
-                // Removed unused 'e' to satisfy TS6133
-                console.log(`${LOG_PREFIX} Audio blocked by browser policy (requires user interaction first).`);
+                console.log(`${LOG_PREFIX} Audio blocked by browser policy.`);
             });
 
-            // 2. Desktop Notification (Works even if the tab is hidden)
+            // 2. Desktop Notification
             if ("Notification" in window && Notification.permission === "granted") {
-                new Notification("WorkAdventure", {
-                    body: `${sender} is waving at you!`,
-                    icon: "https://workadventu.re/favicon.ico" 
+                new Notification(isResponse ? "Wave Back!" : "New Wave", {
+                    body: isResponse ? `${sender} waved back at you!` : `${sender} is waving at you!`,
                 });
             }
 
-            // 3. In-game Banner
-            const waveNotice = WA.ui.displayActionMessage({
-                message: `${sender} is waving! Click to walk to them.`,
-                type: "message",
-                callback: async () => {
-                    WA.player.moveTo(targetX, targetY);
-                    waveNotice.remove();
-                }
-            });
+            // 3. Choice Banner (The logic for Wave Back and Join)
+            if (isResponse) {
+                // If this is just a "Wave Back", show a simple message
+                WA.ui.displayActionMessage({
+                    message: `${sender} waved back at you! 👋`,
+                    type: "message"
+                });
+            } else {
+                // If it's a new wave, show the two buttons
+                const waveNotice = WA.ui.openPopup("clockPopup", `${sender} is waving at you!`, [
+                    {
+                        label: "Wave Back 👋",
+                        className: "success",
+                        callback: (popup) => {
+                            // Find the sender in the room to send an event back
+                            WA.event.sendEvent('wave-event', {
+                                senderName: WA.player.name,
+                                isResponse: true
+                            });
+                            popup.close();
+                        }
+                    },
+                    {
+                        label: "Join 🚶",
+                        className: "primary",
+                        callback: (popup) => {
+                            WA.player.moveTo(targetX, targetY);
+                            popup.close();
+                        }
+                    }
+                ]);
 
-            setTimeout(() => { waveNotice.remove(); }, 20000);
+                // Auto-close after 20 seconds
+                setTimeout(() => { waveNotice.close(); }, 20000);
+            }
 
         } catch (err) {
             console.error(`${LOG_PREFIX} Error handling wave:`, err);
         }
     });
 
-    // Bootstraps the Extra library
     bootstrapExtra().then(() => {
         console.log(`${LOG_PREFIX} Scripting API Extra ready`);
     }).catch(err => {
