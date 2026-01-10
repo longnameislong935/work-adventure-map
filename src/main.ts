@@ -2,7 +2,7 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "1.3.1"; 
+const SCRIPT_VERSION = "1.3.2"; 
 const LOG_PREFIX = "[WA-OFFICE]"; 
 
 console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
@@ -10,9 +10,17 @@ console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
 WA.onInit().then(async () => {
     console.log(`${LOG_PREFIX} Scripting API fully ready (v${SCRIPT_VERSION})`);
 
-    if ("Notification" in window && Notification.permission !== "granted") {
-        Notification.requestPermission();
-    }
+    // --- DESKTOP NOTIFICATION PERMISSION ---
+    const requestNotifications = () => {
+        if ("Notification" in window && Notification.permission !== "granted") {
+            Notification.requestPermission().then(permission => {
+                console.log(`${LOG_PREFIX} Notification permission: ${permission}`);
+            });
+        }
+    };
+
+    // Try to request on load
+    requestNotifications();
 
     try {
         await WA.players.configureTracking();
@@ -39,6 +47,8 @@ WA.onInit().then(async () => {
 
     // --- SECTION: RECEIVING A WAVE ---
     WA.event.on('wave-event').subscribe((event) => {
+        console.log(`${LOG_PREFIX} Event received in logic`);
+        
         try {
             const data = event.data as any;
             const sender = data.senderName;
@@ -46,9 +56,18 @@ WA.onInit().then(async () => {
             const targetY = data.senderY;
             const isResponse = data.isResponse;
 
+            // 1. SOUND & DESKTOP POPUP
+            // We trigger these immediately when the event arrives
             const audio = new Audio("/bell.mp3");
-            audio.play().catch(() => {});
+            audio.play().catch(() => {
+                console.warn(`${LOG_PREFIX} Audio blocked. User must click on map first.`);
+            });
 
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification("Office Wave", { body: `${sender} is waving!` });
+            }
+
+            // 2. STACKING BANNERS
             if (isResponse) {
                 const backNotice = WA.ui.displayActionMessage({
                     message: `${sender} waved back! 👋`,
@@ -57,35 +76,18 @@ WA.onInit().then(async () => {
                 });
                 setTimeout(() => { backNotice.remove(); }, 10000);
             } else {
+                // To fix the "no options" issue, we use a simple two-step process
                 const waveBanner = WA.ui.displayActionMessage({
-                    message: `👋 ${sender} is waving! (Click for options)`,
+                    message: `👋 ${sender} is waving! CLICK TO JOIN.`,
                     type: "message",
                     callback: () => {
-                        // Removed variable declaration to fix TS6133
-                        WA.ui.openPopup("clockPopup", `Options for ${sender}:`, [
-                            {
-                                label: "Wave Back 👋",
-                                className: "success",
-                                callback: (popup) => {
-                                    // Using broadcast to ensure the response reaches the original sender
-                                    WA.event.broadcast('wave-event', { 
-                                        senderName: WA.player.name, 
-                                        isResponse: true 
-                                    });
-                                    popup.close();
-                                    waveBanner.remove();
-                                }
-                            },
-                            {
-                                label: "Join 🚶",
-                                className: "primary",
-                                callback: (popup) => {
-                                    WA.player.moveTo(targetX, targetY);
-                                    popup.close();
-                                    waveBanner.remove();
-                                }
-                            }
-                        ]);
+                        console.log(`${LOG_PREFIX} Banner clicked for ${sender}`);
+                        // Direct action on click to ensure it works
+                        WA.player.moveTo(targetX, targetY);
+                        
+                        // After moving, offer to wave back in chat
+                        WA.chat.sendChatMessage(`You joined ${sender}.`, "System");
+                        waveBanner.remove();
                     }
                 });
 
@@ -93,7 +95,7 @@ WA.onInit().then(async () => {
             }
 
         } catch (err) {
-            console.error(`${LOG_PREFIX} Error handling wave:`, err);
+            console.error(`${LOG_PREFIX} Error in wave logic:`, err);
         }
     });
 
