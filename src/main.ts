@@ -2,13 +2,13 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "3.5.1"; 
+const SCRIPT_VERSION = "3.6.0"; 
 const LOG_PREFIX = "[WA-WAVE]"; 
 
 const waveSound = WA.sound.loadSound("bell.mp3");
 
 WA.onInit().then(async () => {
-    console.log(`${LOG_PREFIX} v${SCRIPT_VERSION} Live`);
+    console.log(`${LOG_PREFIX} v${SCRIPT_VERSION} Native Menu Integration`);
 
     const unlockAudio = () => {
         try { waveSound.play({ volume: 0 }); } catch (err) {}
@@ -25,60 +25,27 @@ WA.onInit().then(async () => {
         // 1. Play Sound
         try { waveSound.play({ volume: 0.7 }); } catch (err) {}
 
-        // 2. Desktop Notification
+        // 2. OS Notification
         if ("Notification" in window && Notification.permission === "granted") {
-            new Notification(data.isResponse ? "Wave Back" : "New Wave", { 
-                body: data.isResponse ? `${data.senderName} waved back! 👋` : `${data.senderName} is waving at you!` 
-            });
+            new Notification("Office Wave", { body: `${data.senderName} is waving!` });
         }
 
-        // 3. Interactive Banner
-        const waveNotice = WA.ui.displayActionMessage({
-            message: data.isResponse ? `👋 ${data.senderName} waved back!` : `👋 ${data.senderName} is waving! (Click to respond)`,
+        // 3. OPEN THE NATIVE MENU
+        // This opens the menu OF the sender ON the receiver's screen.
+        // The receiver can then click 'Talk' or 'Wave back' directly.
+        WA.ui.openRemotePlayerMenu(data.senderId);
+
+        // 4. Visual Hint (Optional)
+        const hint = WA.ui.displayActionMessage({
+            message: `👋 ${data.senderName} is waving! Menu opened.`,
             type: "message",
-            callback: () => {
-                // If they click the banner, open the menu
-                WA.ui.openPopup("clockPopup", `${data.senderName} is waving!`, [
-                    {
-                        label: "Wave Back 👋",
-                        className: "success",
-                        callback: (popup) => {
-                            WA.event.broadcast('wave-event', {
-                                senderId: WA.player.id,
-                                senderName: WA.player.name,
-                                targetId: data.senderId,
-                                isResponse: true
-                            });
-                            popup.close();
-                            waveNotice.remove();
-                        }
-                    },
-                    {
-                        label: "Talk / Walk to 🚶",
-                        className: "primary",
-                        callback: (popup) => {
-                            WA.player.moveTo(data.senderX, data.senderY);
-                            popup.close();
-                            waveNotice.remove();
-                        }
-                    },
-                    {
-                        label: "Close",
-                        className: "warning",
-                        callback: (popup) => {
-                            // This just closes the menu and removes the banner
-                            popup.close();
-                            waveNotice.remove();
-                        }
-                    }
-                ]);
-            }
+            callback: () => { hint.remove(); }
         });
-        
-        setTimeout(() => { waveNotice.remove(); }, 30000);
+        setTimeout(() => { hint.remove(); }, 10000);
     });
 
     // --- SENDING A WAVE ---
+    // This is the function you provided, slightly tuned for the receiver's menu
     WA.ui.onRemotePlayerClicked.subscribe((remotePlayer: any) => {
         remotePlayer.addAction('Wave 👋', async () => {
             const myPosition = await WA.player.getPosition();
