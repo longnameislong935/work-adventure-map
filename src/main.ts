@@ -2,13 +2,28 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "1.4.5"; 
+const SCRIPT_VERSION = "1.4.6"; 
 const LOG_PREFIX = "[WA-OFFICE]"; 
 
 console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
 
-// Relative path: looks in the same directory where the map/script is served
+// Relative path
 const waveSound = new Audio("bell.mp3");
+
+// --- AUTO-UNLOCK AUDIO ---
+// This listens for the very first click on the map to "enable" sound for the browser
+const unlockAudio = () => {
+    waveSound.play().then(() => {
+        // Sound works! Stop and reset so it's ready for a wave
+        waveSound.pause();
+        waveSound.currentTime = 0;
+        console.log(`${LOG_PREFIX} Audio unlocked and ready.`);
+        window.removeEventListener('click', unlockAudio);
+    }).catch(() => {
+        // Still locked, wait for next click
+    });
+};
+window.addEventListener('click', unlockAudio);
 
 WA.onInit().then(async () => {
     console.log(`${LOG_PREFIX} Scripting API fully ready (v${SCRIPT_VERSION})`);
@@ -34,12 +49,10 @@ WA.onInit().then(async () => {
             const targetY = data.senderY;
 
             // 1. PLAY CUSTOM AUDIO
-            // Re-assigning src right before play can sometimes force a refresh of the resource
-            waveSound.src = "bell.mp3"; 
             waveSound.play()
                 .then(() => console.log(`${LOG_PREFIX} Bell sound played.`))
                 .catch((err) => {
-                    console.warn(`${LOG_PREFIX} Audio play failed. Make sure you've clicked the map at least once!`, err);
+                    console.warn(`${LOG_PREFIX} Audio still blocked. Please click the map.`, err);
                 });
 
             // 2. DESKTOP NOTIFICATION
@@ -76,7 +89,6 @@ WA.onInit().then(async () => {
                 senderX: myPosition.x,
                 senderY: myPosition.y
             });
-            console.log(`${LOG_PREFIX} Wave sent to ${remotePlayer.name}`);
         });
     });
 
