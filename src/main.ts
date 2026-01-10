@@ -2,15 +2,15 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "2.0.0"; 
+const SCRIPT_VERSION = "2.0.1"; 
 const LOG_PREFIX = "[WA-WAVE]"; 
 
-console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
+// Pre-load the sound as a WA Sound Object based on the API docs
+const waveSound = WA.sound.loadSound("bell.mp3");
 
 WA.onInit().then(async () => {
-    console.log(`${LOG_PREFIX} Scripting API fully ready (v${SCRIPT_VERSION})`);
+    console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
 
-    // Request desktop notification permission immediately
     if ("Notification" in window && Notification.permission !== "granted") {
         Notification.requestPermission();
     }
@@ -20,17 +20,23 @@ WA.onInit().then(async () => {
         try {
             const data = event.data;
             
-            // SECURITY CHECK: Only show the wave if it was meant for ME
-            // This ensures the wave is private between sender and receiver
-            if (data.targetId !== WA.player.id) {
-                return;
-            }
+            // Privacy Filter
+            if (data.targetId !== WA.player.id) return;
 
             const sender = data.senderName;
-            const targetX = data.senderX;
-            const targetY = data.senderY;
 
-            // 1. DESKTOP NOTIFICATION (OS Sound)
+            // 1. PLAY NATIVE SOUND (Using the class methods from your docs)
+            try {
+                waveSound.play({
+                    volume: 0.8,
+                    loop: false,
+                    mute: false
+                });
+            } catch (soundErr) {
+                console.error(`${LOG_PREFIX} WA Sound Engine error:`, soundErr);
+            }
+
+            // 2. DESKTOP NOTIFICATION
             if ("Notification" in window && Notification.permission === "granted") {
                 new Notification("New Wave", {
                     body: `${sender} is waving at you!`,
@@ -38,21 +44,19 @@ WA.onInit().then(async () => {
                 });
             }
 
-            // 2. VISUAL BANNER WITH JOIN BUTTON
+            // 3. VISUAL BANNER
             const waveNotice = WA.ui.displayActionMessage({
                 message: `👋 ${sender} is waving! (Click to Join)`,
                 type: "message",
                 callback: () => {
-                    WA.player.moveTo(targetX, targetY);
+                    WA.player.moveTo(data.senderX, data.senderY);
                     waveNotice.remove();
                 }
             });
-
-            // Auto-hide banner after 30 seconds
             setTimeout(() => { waveNotice.remove(); }, 30000);
 
         } catch (err) {
-            console.error(`${LOG_PREFIX} Error handling wave:`, err);
+            console.error(`${LOG_PREFIX} Error:`, err);
         }
     });
 
@@ -61,8 +65,6 @@ WA.onInit().then(async () => {
         remotePlayer.addAction('Wave 👋', async () => {
             const myPosition = await WA.player.getPosition();
             
-            // Send event specifically to the person clicked
-            // Using broadcast with a targetId is the most reliable cross-room method
             WA.event.broadcast('wave-event', {
                 targetId: remotePlayer.id,
                 senderName: WA.player.name,
