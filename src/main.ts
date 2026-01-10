@@ -2,13 +2,13 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "4.0.0"; 
+const SCRIPT_VERSION = "4.1.0"; 
 const LOG_PREFIX = "[WA-WAVE]"; 
 
 const waveSound = WA.sound.loadSound("bell.mp3");
 
 WA.onInit().then(async () => {
-    console.log(`${LOG_PREFIX} v${SCRIPT_VERSION} Banner Mode Active`);
+    console.log(`${LOG_PREFIX} v${SCRIPT_VERSION} Single-Action Logic`);
 
     const unlockAudio = () => {
         try { waveSound.play({ volume: 0 }); } catch (err) {}
@@ -24,37 +24,27 @@ WA.onInit().then(async () => {
         // 1. Play Sound
         try { waveSound.play({ volume: 0.8 }); } catch (err) {}
 
-        // 2. Open the Top Banner (Persistent & Highly Visible)
-        WA.ui.banner.openBanner({
-            id: "wave-banner",
-            text: `👋 ${data.senderName} is waving at you!`,
-            bgColor: "#1b263b",
-            textColor: "#ffffff",
-            closable: true,
-            timeToClose: 10000 // Closes automatically after 10 seconds
-        });
-
-        // 3. The Clickable "Join" Action (Bottom of screen)
+        // 2. Single Bottom Action (The most reliable clickable element)
+        // We use 'warning' type to distinguish it from standard chat
         const joinAction = WA.ui.displayActionMessage({
-            message: `Click to Join ${data.senderName} 🚶`,
-            type: "message",
+            message: `👋 ${data.senderName} is waving! CLICK HERE to walk to them.`,
+            type: "warning", 
             callback: () => {
+                // This code ONLY runs if they click the banner
                 WA.player.moveTo(data.senderX, data.senderY);
                 
-                // Response event
+                // Send automated Wave Back
                 WA.event.broadcast('wave-event', {
                     senderId: WA.player.id,
                     senderName: WA.player.name,
                     targetId: data.senderId,
                     isResponse: true
                 });
-
-                joinAction.remove();
-                WA.ui.banner.closeBanner();
             }
         });
 
-        setTimeout(() => { joinAction.remove(); }, 10000);
+        // Auto-remove after 12 seconds so it doesn't stay forever
+        setTimeout(() => { joinAction.remove(); }, 12000);
     });
 
     // --- SENDING A WAVE ---
