@@ -2,15 +2,14 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "3.9.0"; 
+const SCRIPT_VERSION = "3.9.1"; 
 const LOG_PREFIX = "[WA-WAVE]"; 
 
 const waveSound = WA.sound.loadSound("bell.mp3");
 
 WA.onInit().then(async () => {
-    console.log(`${LOG_PREFIX} v${SCRIPT_VERSION} Mobile-Friendly UI`);
+    console.log(`${LOG_PREFIX} v${SCRIPT_VERSION} Single Banner UI`);
 
-    // Audio Unlocker
     const unlockAudio = () => {
         try { waveSound.play({ volume: 0 }); } catch (err) {}
         window.removeEventListener('click', unlockAudio);
@@ -25,12 +24,13 @@ WA.onInit().then(async () => {
         // 1. Play Sound
         try { waveSound.play({ volume: 0.7 }); } catch (err) {}
 
-        // 2. The "Question" Banner
-        const questionNotice = WA.ui.displayActionMessage({
+        // 2. The Single Action Banner
+        // This is the most reliable UI element for mobile/moving players.
+        const waveNotice = WA.ui.displayActionMessage({
             message: `👋 ${data.senderName} is waving! Click here to JOIN them.`,
             type: "message",
             callback: () => {
-                // ACTION: User clicked YES (the banner itself)
+                // ACTION: Join the person
                 WA.player.moveTo(data.senderX, data.senderY);
                 
                 // Send automated Wave Back
@@ -40,25 +40,14 @@ WA.onInit().then(async () => {
                     targetId: data.senderId,
                     isResponse: true
                 });
-                questionNotice.remove();
+                waveNotice.remove();
             }
         });
 
-        // 3. The "Dismiss" Banner (Optional second banner to act as the 'NO' button)
-        const dismissNotice = WA.ui.displayActionMessage({
-            message: `(Or click here to dismiss)`,
-            type: "warning",
-            callback: () => {
-                questionNotice.remove();
-                dismissNotice.remove();
-            }
-        });
-
-        // Auto-clean after 20 seconds
+        // Auto-remove after 15 seconds to keep the screen clear
         setTimeout(() => { 
-            questionNotice.remove(); 
-            dismissNotice.remove();
-        }, 20000);
+            try { waveNotice.remove(); } catch(e) {}
+        }, 15000);
     });
 
     // --- SENDING A WAVE ---
