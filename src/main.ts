@@ -2,24 +2,13 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "1.6.0"; 
+const SCRIPT_VERSION = "1.6.2"; 
 const LOG_PREFIX = "[WA-OFFICE]"; 
 
 console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
 
 WA.onInit().then(async () => {
     console.log(`${LOG_PREFIX} Scripting API fully ready (v${SCRIPT_VERSION})`);
-
-    // Force permission check
-    if ("Notification" in window && Notification.permission !== "granted") {
-        Notification.requestPermission();
-    }
-
-    try {
-        await WA.players.configureTracking();
-    } catch (err) {
-        console.error(`${LOG_PREFIX} Tracking failed:`, err);
-    }
 
     // --- RECEIVING A WAVE ---
     WA.event.on('wave-event').subscribe((event) => {
@@ -30,29 +19,29 @@ WA.onInit().then(async () => {
             const targetY = data.senderY;
             const isResponse = data.isResponse;
 
-            // 1. TRIGGER OS NOTIFICATION
-            // On Mac, the OS will play its own sound automatically if notifications are allowed.
+            // 1. USE CHAT FOR AUDIO (Mac-Friendly Fallback)
+            // This triggers the native WA notification sound that you know works!
+            if (isResponse) {
+                WA.chat.sendChatMessage(`${sender} waved back! 👋`, "Wave System");
+            } else {
+                WA.chat.sendChatMessage(`${sender} is waving! Click the blue banner to join.`, "Wave System");
+            }
+
+            // 2. DESKTOP NOTIFICATION (Still here for visual cues)
             if ("Notification" in window && Notification.permission === "granted") {
                 new Notification(isResponse ? "Wave Back" : "New Wave", {
-                    body: isResponse ? `${sender} waved back! 👋` : `${sender} is waving at you!`,
-                    // We remove 'silent: true' so the Mac OS plays its default 'ding'
+                    body: isResponse ? `${sender} waved back!` : `${sender} is waving at you!`,
+                    tag: "wa-wave",
+                    renotify: true
                 });
             }
 
-            // 2. VISUAL BANNER (Stacking)
-            if (isResponse) {
-                const backNotice = WA.ui.displayActionMessage({
-                    message: `${sender} waved back! 👋`,
-                    type: "message",
-                    callback: () => { backNotice.remove(); }
-                });
-                setTimeout(() => { backNotice.remove(); }, 10000);
-            } else {
+            // 3. INTERACTIVE BANNER
+            if (!isResponse) {
                 const waveNotice = WA.ui.displayActionMessage({
                     message: `👋 ${sender} is waving! (Click for options)`,
                     type: "message",
                     callback: () => {
-                        // Open the popup menu for Join/Wave Back
                         WA.ui.openPopup("clockPopup", `${sender} is waving!`, [
                             {
                                 label: "Wave Back 👋",
