@@ -31,7 +31,7 @@ WA.onInit().then(async () => {
 
             // 1. PLAY CUSTOM AUDIO FIRST
             // We use the root path to find bell.mp3 in the public folder
-            const audio = new Audio("./bell.mp3"); 
+            const audio = new Audio("bell.mp3"); 
             audio.volume = 1.0;
             
             audio.play()
