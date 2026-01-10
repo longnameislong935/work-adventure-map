@@ -2,13 +2,13 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "1.4.4"; 
+const SCRIPT_VERSION = "1.4.5"; 
 const LOG_PREFIX = "[WA-OFFICE]"; 
 
 console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
 
-// Pre-create the audio object at the top level to help the browser "prime" the resource
-const waveSound = new Audio("resources/sounds/bell.mp3");
+// Relative path: looks in the same directory where the map/script is served
+const waveSound = new Audio("bell.mp3");
 
 WA.onInit().then(async () => {
     console.log(`${LOG_PREFIX} Scripting API fully ready (v${SCRIPT_VERSION})`);
@@ -34,11 +34,12 @@ WA.onInit().then(async () => {
             const targetY = data.senderY;
 
             // 1. PLAY CUSTOM AUDIO
-            // We use the pre-defined object to avoid 'resource not suitable' errors
+            // Re-assigning src right before play can sometimes force a refresh of the resource
+            waveSound.src = "bell.mp3"; 
             waveSound.play()
-                .then(() => console.log(`${LOG_PREFIX} Bell sound played successfully.`))
+                .then(() => console.log(`${LOG_PREFIX} Bell sound played.`))
                 .catch((err) => {
-                    console.warn(`${LOG_PREFIX} Audio play failed. This is usually due to browser autoplay policies. Click the map!`, err);
+                    console.warn(`${LOG_PREFIX} Audio play failed. Make sure you've clicked the map at least once!`, err);
                 });
 
             // 2. DESKTOP NOTIFICATION
