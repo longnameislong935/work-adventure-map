@@ -2,7 +2,7 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "1.6.3"; 
+const SCRIPT_VERSION = "1.6.4"; 
 const LOG_PREFIX = "[WA-OFFICE]"; 
 
 console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
@@ -10,9 +10,13 @@ console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
 WA.onInit().then(async () => {
     console.log(`${LOG_PREFIX} Scripting API fully ready (v${SCRIPT_VERSION})`);
 
-    if ("Notification" in window && Notification.permission !== "granted") {
-        Notification.requestPermission();
-    }
+    // --- MAC FIX: Request permission ONLY on a specific action ---
+    // Safari ignores requests that aren't tied to a click.
+    const enableNotifications = () => {
+        if ("Notification" in window && Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+    };
 
     try {
         await WA.players.configureTracking();
@@ -29,16 +33,16 @@ WA.onInit().then(async () => {
             const targetY = data.senderY;
             const isResponse = data.isResponse;
 
-            // 1. USE CHAT FOR AUDIO (Native WA Sound)
-            // This is the Mac-specific fix. It uses the game's internal audio.
-            if (isResponse) {
-                WA.chat.sendChatMessage(`${sender} waved back! 👋`, "Wave System");
-            } else {
-                WA.chat.sendChatMessage(`${sender} is waving!`, "Wave System");
-            }
+            // 1. MAC AUDIO FALLBACK: The 'warning' UI type
+            // This UI type often triggers a system-level beep in Safari/Chrome on Mac.
+            const audioAlert = WA.ui.displayActionMessage({
+                message: isResponse ? `👋 ${sender} waved back!` : `🔔 WAVE: ${sender} is waving!`,
+                type: isResponse ? "message" : "warning", // 'warning' is more likely to trigger a sound
+                callback: () => { audioAlert.remove(); }
+            });
+            setTimeout(() => { audioAlert.remove(); }, 10000);
 
             // 2. DESKTOP NOTIFICATION
-            // Removed 'renotify' to fix TS2353 build error
             if ("Notification" in window && Notification.permission === "granted") {
                 new Notification(isResponse ? "Wave Back" : "New Wave", {
                     body: isResponse ? `${sender} waved back!` : `${sender} is waving at you!`,
@@ -46,12 +50,13 @@ WA.onInit().then(async () => {
                 });
             }
 
-            // 3. INTERACTIVE BANNER
+            // 3. INTERACTIVE BANNER (Only for new waves)
             if (!isResponse) {
                 const waveNotice = WA.ui.displayActionMessage({
-                    message: `👋 ${sender} is waving! (Click for options)`,
+                    message: `Options for ${sender} (Click to open)`,
                     type: "message",
                     callback: () => {
+                        enableNotifications(); // Use this click to try and 'unlock' permissions
                         WA.ui.openPopup("clockPopup", `${sender} is waving!`, [
                             {
                                 label: "Wave Back 👋",
@@ -85,6 +90,7 @@ WA.onInit().then(async () => {
     // --- SENDING A WAVE ---
     WA.ui.onRemotePlayerClicked.subscribe((remotePlayer) => {
         remotePlayer.addAction('Wave 👋', async () => {
+            enableNotifications(); // Prime notifications when you wave at someone else
             const myPosition = await WA.player.getPosition();
             remotePlayer.sendEvent('wave-event', {
                 senderName: WA.player.name,
