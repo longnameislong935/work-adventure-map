@@ -3,17 +3,14 @@
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
 // --- CONFIGURATION ---
-const SCRIPT_VERSION = "1.0.4"; 
-const LOG_PREFIX = "[WA-OFFICE]"; // Search for this in your browser console!
+const SCRIPT_VERSION = "1.0.5"; 
+const LOG_PREFIX = "[WA-OFFICE]"; 
 
 console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
-
-let currentPopup: any = undefined;
 
 WA.onInit().then(async () => {
     console.log(`${LOG_PREFIX} Scripting API fully ready (v${SCRIPT_VERSION})`);
 
-    // Enable tracking so players can "see" each other
     try {
         await WA.players.configureTracking();
         console.log(`${LOG_PREFIX} Player tracking enabled.`);
@@ -44,7 +41,7 @@ WA.onInit().then(async () => {
                 });
                 
                 WA.chat.sendChatMessage(`You waved at ${remotePlayer.name}`, "System");
-                console.log(`${LOG_PREFIX} Wave event sent to: ${remotePlayer.name} (${remotePlayer.id})`);
+                console.log(`${LOG_PREFIX} Wave event sent to: ${remotePlayer.name}`);
             } catch (err) {
                 console.error(`${LOG_PREFIX} Error sending wave:`, err);
             }
@@ -53,7 +50,7 @@ WA.onInit().then(async () => {
 
     // --- SECTION 3: RECEIVING A WAVE ---
     WA.event.on('wave-event').subscribe((event) => {
-        console.log(`${LOG_PREFIX} Wave event received! Data:`, event);
+        console.log(`${LOG_PREFIX} Wave event received!`, event);
         
         try {
             const data = event.data as any;
