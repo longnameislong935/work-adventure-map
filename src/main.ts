@@ -2,8 +2,7 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-// --- CONFIGURATION ---
-const SCRIPT_VERSION = "1.0.5"; 
+const SCRIPT_VERSION = "1.0.6"; 
 const LOG_PREFIX = "[WA-OFFICE]"; 
 
 console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
@@ -11,46 +10,33 @@ console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
 WA.onInit().then(async () => {
     console.log(`${LOG_PREFIX} Scripting API fully ready (v${SCRIPT_VERSION})`);
 
-    try {
-        await WA.players.configureTracking();
-        console.log(`${LOG_PREFIX} Player tracking enabled.`);
-    } catch (e) {
-        console.error(`${LOG_PREFIX} Tracking failed to initialize:`, e);
+    // Request permission for Desktop Notifications as soon as the map loads
+    if ("Notification" in window && Notification.permission !== "granted") {
+        Notification.requestPermission();
     }
 
-    // --- SECTION 1: THE CLOCK ---
-    WA.room.area.onEnter('clock').subscribe(() => {
-        const today = new Date();
-        const time = today.getHours() + ":" + today.getMinutes().toString().padStart(2, '0');
-        WA.chat.sendChatMessage(`${LOG_PREFIX} The time is ${time}`, "System");
-    });
+    try {
+        await WA.players.configureTracking();
+    } catch (e) {
+        console.error(`${LOG_PREFIX} Tracking failed:`, e);
+    }
 
-    // --- SECTION 2: SENDING A WAVE ---
+    // --- SECTION: SENDING A WAVE ---
     WA.ui.onRemotePlayerClicked.subscribe((remotePlayer) => {
-        console.log(`${LOG_PREFIX} Menu opened for player:`, remotePlayer.name);
-        
         remotePlayer.addAction('Wave 👋', async () => {
-            try {
-                const myPosition = await WA.player.getPosition();
-                
-                // Send the event
-                remotePlayer.sendEvent('wave-event', {
-                    senderName: WA.player.name,
-                    senderX: myPosition.x,
-                    senderY: myPosition.y
-                });
-                
-                WA.chat.sendChatMessage(`You waved at ${remotePlayer.name}`, "System");
-                console.log(`${LOG_PREFIX} Wave event sent to: ${remotePlayer.name}`);
-            } catch (err) {
-                console.error(`${LOG_PREFIX} Error sending wave:`, err);
-            }
+            const myPosition = await WA.player.getPosition();
+            remotePlayer.sendEvent('wave-event', {
+                senderName: WA.player.name,
+                senderX: myPosition.x,
+                senderY: myPosition.y
+            });
+            WA.chat.sendChatMessage(`You waved at ${remotePlayer.name}`, "System");
         });
     });
 
-    // --- SECTION 3: RECEIVING A WAVE ---
+    // --- SECTION: RECEIVING A WAVE ---
     WA.event.on('wave-event').subscribe((event) => {
-        console.log(`${LOG_PREFIX} Wave event received!`, event);
+        console.log(`${LOG_PREFIX} Wave event received!`);
         
         try {
             const data = event.data as any;
@@ -58,27 +44,32 @@ WA.onInit().then(async () => {
             const targetX = data.senderX;
             const targetY = data.senderY;
 
-            // 1. Send a chat message (as a backup)
-            WA.chat.sendChatMessage(`${sender} is waving at you!`, "System");
+            // 1. Play a Notification Sound (Uses a standard system beep)
+            const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+            audio.play().catch(e => console.log(`${LOG_PREFIX} Audio blocked by browser policy.`));
 
-            // 2. Show the Action Message banner
+            // 2. Desktop Notification (Works even if the tab is hidden)
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification("WorkAdventure", {
+                    body: `${sender} is waving at you!`,
+                    icon: "https://workadventu.re/favicon.ico" 
+                });
+            }
+
+            // 3. In-game Banner
             const waveNotice = WA.ui.displayActionMessage({
                 message: `${sender} is waving! Click to walk to them.`,
                 type: "message",
                 callback: async () => {
-                    console.log(`${LOG_PREFIX} Join clicked. Moving to sender's last position.`);
                     WA.player.moveTo(targetX, targetY);
                     waveNotice.remove();
                 }
             });
 
-            // Auto-remove after 20 seconds
-            setTimeout(() => {
-                waveNotice.remove();
-            }, 20000);
+            setTimeout(() => { waveNotice.remove(); }, 20000);
 
         } catch (err) {
-            console.error(`${LOG_PREFIX} Error handling received wave:`, err);
+            console.error(`${LOG_PREFIX} Error handling wave:`, err);
         }
     });
 
