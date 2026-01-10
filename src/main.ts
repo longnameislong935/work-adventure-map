@@ -2,7 +2,7 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "1.9.3"; 
+const SCRIPT_VERSION = "1.9.4"; 
 const LOG_PREFIX = "[WA-WAVE]"; 
 
 WA.onInit().then(async () => {
@@ -10,25 +10,24 @@ WA.onInit().then(async () => {
     await bootstrapExtra();
 
     // 1. LISTENING FOR PRIVATE WAVES
-    // Changed 'onPlayerEntered' to 'onPlayerEnters' to match your API version
-    WA.players.onPlayerEnters().subscribe((remotePlayer: any) => {
+    // Fixed: onPlayerEnters is a property/accessor, removed the ()
+    WA.players.onPlayerEnters.subscribe((remotePlayer: any) => {
         
-        // Explicitly typing 'data' as any to satisfy the compiler
         remotePlayer.state.onVariableChange("waveData").subscribe((data: any) => {
             if (!data) return;
             
-            // Checking against the player's unique ID (uuid)
+            // Check if the wave is for me
             if (data.targetId !== WA.player.id) {
                 return; 
             }
 
-            console.log(`${LOG_PREFIX} Private wave received from ${data.senderName}`);
+            console.log(`${LOG_PREFIX} Private wave from ${data.senderName}`);
 
-            // A. Play Sound (The door.ts way)
+            // A. Play Sound
             try {
                 WA.sound.loadSound("bell.mp3").play({ volume: 0.8 });
             } catch(e) {
-                console.warn("Audio play blocked by browser.");
+                console.warn("Audio blocked");
             }
 
             // B. Visual Banner
@@ -46,7 +45,7 @@ WA.onInit().then(async () => {
             if ("Notification" in window && Notification.permission === "granted") {
                 new Notification("Private Wave", {
                     body: `${data.senderName} is waving at you!`,
-                    tag: `wave-${remotePlayer.uuid}`
+                    tag: `wave-${remotePlayer.id}`
                 });
             }
         });
@@ -60,9 +59,8 @@ WA.onInit().then(async () => {
             const newCount = (currentData?.count || 0) + 1;
 
             // Update MY state with the target's ID
-            // We use remotePlayer.uuid as the unique identifier
             WA.player.state.waveData = {
-                targetId: remotePlayer.uuid,
+                targetId: remotePlayer.id,
                 senderName: WA.player.name,
                 count: newCount
             };
