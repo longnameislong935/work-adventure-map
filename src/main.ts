@@ -2,7 +2,9 @@
 
 import { bootstrapExtra } from "@workadventure/scripting-api-extra";
 
-const SCRIPT_VERSION = "1.0.6"; 
+// This allows you to ensure you are loading the correct script in the browser as caching can cause delays in loading changes. using dev tools in chrome and console
+const SCRIPT_VERSION = "1.0.8"; 
+// This allows for easy searching in the console for custom logging I.E. console.log(`${LOG_PREFIX} YOUR LOG HERE!`);
 const LOG_PREFIX = "[WA-OFFICE]"; 
 
 console.log(`${LOG_PREFIX} Script Loading: v${SCRIPT_VERSION}`);
@@ -17,20 +19,25 @@ WA.onInit().then(async () => {
 
     try {
         await WA.players.configureTracking();
-    } catch (e) {
-        console.error(`${LOG_PREFIX} Tracking failed:`, e);
+    } catch (err) {
+        // Changed to 'err' and utilized in log to satisfy TS6133
+        console.error(`${LOG_PREFIX} Tracking failed:`, err);
     }
 
     // --- SECTION: SENDING A WAVE ---
     WA.ui.onRemotePlayerClicked.subscribe((remotePlayer) => {
         remotePlayer.addAction('Wave 👋', async () => {
-            const myPosition = await WA.player.getPosition();
-            remotePlayer.sendEvent('wave-event', {
-                senderName: WA.player.name,
-                senderX: myPosition.x,
-                senderY: myPosition.y
-            });
-            WA.chat.sendChatMessage(`You waved at ${remotePlayer.name}`, "System");
+            try {
+                const myPosition = await WA.player.getPosition();
+                remotePlayer.sendEvent('wave-event', {
+                    senderName: WA.player.name,
+                    senderX: myPosition.x,
+                    senderY: myPosition.y
+                });
+                WA.chat.sendChatMessage(`You waved at ${remotePlayer.name}`, "System");
+            } catch (err) {
+                console.error(`${LOG_PREFIX} Error sending wave:`, err);
+            }
         });
     });
 
@@ -46,7 +53,10 @@ WA.onInit().then(async () => {
 
             // 1. Play a Notification Sound (Uses a standard system beep)
             const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
-            audio.play().catch(e => console.log(`${LOG_PREFIX} Audio blocked by browser policy.`));
+            audio.play().catch(() => {
+                // Removed unused 'e' to satisfy TS6133
+                console.log(`${LOG_PREFIX} Audio blocked by browser policy (requires user interaction first).`);
+            });
 
             // 2. Desktop Notification (Works even if the tab is hidden)
             if ("Notification" in window && Notification.permission === "granted") {
@@ -73,10 +83,15 @@ WA.onInit().then(async () => {
         }
     });
 
+    // Bootstraps the Extra library
     bootstrapExtra().then(() => {
         console.log(`${LOG_PREFIX} Scripting API Extra ready`);
-    }).catch(e => console.error(`${LOG_PREFIX} Extra Library error:`, e));
+    }).catch(err => {
+        console.error(`${LOG_PREFIX} Extra Library error:`, err);
+    });
 
-}).catch(e => console.error(`${LOG_PREFIX} Initialization error:`, e));
+}).catch(err => {
+    console.error(`${LOG_PREFIX} Initialization error:`, err);
+});
 
 export {};
